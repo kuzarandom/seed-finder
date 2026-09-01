@@ -725,6 +725,13 @@
         margin-bottom: 10px;
       }
 
+      .seed-block-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
       .seed-block a {
         font-family: Fraunces, Georgia, serif;
         font-size: clamp(1.8rem, 4vw, 2.6rem);
@@ -732,6 +739,30 @@
         text-decoration: none;
         letter-spacing: 0.08em;
         cursor: pointer;
+        min-width: 0;
+        word-break: break-all;
+      }
+
+      .seed-block a:hover {
+        text-decoration: underline;
+        text-underline-offset: 6px;
+      }
+
+      .btn-copy {
+        flex: 0 0 auto;
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #1a1218;
+        color: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+
+      .btn-copy:hover {
+        border-color: var(--gold);
+        background: rgba(232, 196, 120, 0.12);
       }
 
       .copy-hint {
@@ -1614,6 +1645,24 @@
         );
       }
 
+      function seedAnalyzerUrl(seed) {
+        return (
+          "https://balatrohq.com/tools/seed-analyzer/?seed=" +
+          encodeURIComponent(seed)
+        );
+      }
+
+      function copySeed(seed, btn) {
+        navigator.clipboard.writeText(seed).then(() => {
+          if (!btn) return;
+          const prev = btn.textContent;
+          btn.textContent = "Copied";
+          setTimeout(() => {
+            btn.textContent = prev;
+          }, 1200);
+        });
+      }
+
       function resultDetailHtml(result) {
         const locs = result.locations || {};
         const legendaryHtml =
@@ -1638,12 +1687,19 @@
         return `
           <div class="result-card">
             <div class="seed-block">
-              <a
-                role="button"
-                tabindex="0"
-                onclick="navigator.clipboard.writeText(this.innerText.trim())"
-              >${result.seed}</a>
-              <span class="copy-hint">Click seed to copy</span>
+              <div class="seed-block-row">
+                <a
+                  href="${seedAnalyzerUrl(result.seed)}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >${result.seed}</a>
+                <button
+                  type="button"
+                  class="btn-copy"
+                  onclick="copySeed('${result.seed}', this)"
+                >Copy</button>
+              </div>
+              <span class="copy-hint">Open in Seed Analyzer</span>
             </div>
             <div class="result-row">
               <dt>Search</dt>
