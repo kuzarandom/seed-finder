@@ -108,8 +108,9 @@
 
       .seed-chip {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
         width: 100%;
         padding: 8px 10px;
         border: 1px solid var(--line);
@@ -121,6 +122,13 @@
         letter-spacing: 0.06em;
         text-align: left;
         cursor: pointer;
+      }
+
+      .seed-chip-meta {
+        color: var(--muted);
+        font-family: Outfit, system-ui, sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 0;
       }
 
       .seed-chip:hover {
@@ -831,7 +839,7 @@
                   type="number"
                   id="legendary-ante"
                   class="form-control"
-                  value="0"
+                  value="8"
                   oninput="validateInputUint(this)"
                 />
               </div>
@@ -1438,6 +1446,10 @@
         card.classList.toggle("is-selected", selected);
         const nameEl = card.querySelector(".card-name");
         nameEl.classList.toggle("legendary", selected);
+        if (selected) {
+          const ante = document.getElementById("legendary-ante");
+          if (Number(ante.value) === 0) ante.value = 8;
+        }
         fillStage("legendary", joker);
       }
 
@@ -1695,14 +1707,18 @@
           return;
         }
         list.innerHTML = foundHits
-          .map(
-            (h) => `
+          .map((h) => {
+            const legs = (h.locations?.legendaries || [])
+              .map((item) => item.label)
+              .join(" · ");
+            return `
             <button type="button" class="seed-chip${
               h.seed === selectedSeed ? " is-active" : ""
             }" onclick="selectFoundHit('${h.seed}')">
               <span>${h.seed}</span>
-            </button>`
-          )
+              ${legs ? `<span class="seed-chip-meta">${legs}</span>` : ""}
+            </button>`;
+          })
           .join("");
       }
 
@@ -1974,6 +1990,11 @@
           "stake: White",
           "must:",
         ];
+
+        if (opts.legendaries.length > 0) {
+          lines.push("  - spectralCard: TheSoul");
+          lines.push(`    antes: [${yamlAntes(opts.legendaryAnte)}]`);
+        }
 
         opts.legendaries.forEach((joker, index) => {
           lines.push(`  - legendaryJoker: ${toMotelyId(joker)}`);

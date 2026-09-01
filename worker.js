@@ -82,6 +82,7 @@ async function runSearch(jaml, startBatch, stride, targets) {
           console.error(locateErr);
         }
         if (wantShopOrder && !shopOrderOk(locations, targets)) continue;
+        if (!legendariesOk(locations, targets)) continue;
         posted.add(seed);
         port.postMessage({
           type: "found",
@@ -123,6 +124,13 @@ function shopKey(item) {
   const slot = Number(item.slot);
   if (!Number.isFinite(ante) || !Number.isFinite(slot)) return Infinity;
   return ante * 100 + slot;
+}
+
+function legendariesOk(locations, targets) {
+  const wanted = targets?.legendaries || [];
+  if (wanted.length === 0) return true;
+  const found = new Set((locations?.legendaries || []).map((item) => item.label));
+  return wanted.every((want) => found.has(want.label));
 }
 
 function shopOrderOk(locations, targets) {
@@ -168,19 +176,20 @@ should:
   }
 
   const legendStream = analysis.antes[0]?.pulls?.legendaryJokers || [];
-  (targets.legendaries || []).forEach((want) => {
-    for (let i = 0; i < legendStream.length; i++) {
-      if (itemName(legendStream[i]) !== want.id) continue;
-      const soul = souls[i];
-      legendaries.push({
-        label: want.label,
-        ante: soul ? soul.ante : "-",
-        pack: soul ? soul.pack : "-",
-        packType: soul ? soul.packType : "",
-        edition: editionName(legendStream[i]),
-      });
-      break;
-    }
+  const wantedLegend = new Map(
+    (targets.legendaries || []).map((want) => [want.id, want.label])
+  );
+  souls.forEach((soul, i) => {
+    const item = legendStream[i];
+    if (!item) return;
+    const id = itemName(item);
+    legendaries.push({
+      label: wantedLegend.get(id) || id,
+      ante: soul.ante,
+      pack: soul.pack,
+      packType: soul.packType,
+      edition: editionName(item),
+    });
   });
 
   (targets.vouchers || []).forEach((want) => {
