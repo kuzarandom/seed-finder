@@ -53,6 +53,9 @@ async function runSearch(jaml, startBatch, stride, targets) {
   searching = true;
   totalTried = 0;
   let batch = startBatch % TOTAL_BATCHES;
+  const wantShopOrder = (targets?.jokersShop || []).length >= 2;
+  const stopAfter = wantShopOrder ? 48n : 8n;
+  const posted = new Set();
 
   try {
     const config = engine.MotelyJaml.fromJaml(jaml);
@@ -60,7 +63,7 @@ async function runSearch(jaml, startBatch, stride, targets) {
     while (searching) {
       const results = await engine.MotelySearch.collectSequential(
         config,
-        1n,
+        stopAfter,
         BigInt(batch),
         BigInt(batch + 1),
         BATCH_CHARS
@@ -68,22 +71,24 @@ async function runSearch(jaml, startBatch, stride, targets) {
 
       if (!searching) return;
 
-      if (results.length > 0) {
-        searching = false;
-        const seed = results[0].seed;
+      for (let i = 0; i < results.length; i++) {
+        if (!searching) return;
+        const seed = results[i].seed;
+        if (posted.has(seed)) continue;
         let locations = {};
         try {
           locations = locateTargets(seed, targets || {});
         } catch (locateErr) {
           console.error(locateErr);
         }
+        if (wantShopOrder && !shopOrderOk(locations, targets)) continue;
+        posted.add(seed);
         port.postMessage({
           type: "found",
           seed,
-          tries: totalTried + 1,
+          tries: totalTried + i + 1,
           locations,
         });
-        return;
       }
 
       totalTried += 35 ** BATCH_CHARS;
@@ -109,7 +114,26 @@ function editionName(item) {
 }
 
 function displayAnte(ante) {
-  return ante.ante + 1;
+  // Jamlyzer `ante` is already the in-game ante (0, 1, 2, …).
+  return ante.ante;
+}
+
+function shopKey(item) {
+  const ante = Number(item.ante);
+  const slot = Number(item.slot);
+  if (!Number.isFinite(ante) || !Number.isFinite(slot)) return Infinity;
+  return ante * 100 + slot;
+}
+
+function shopOrderOk(locations, targets) {
+  const wanted = targets?.jokersShop || [];
+  if (wanted.length < 2) return true;
+  const found = locations?.jokersShop || [];
+  if (found.length < wanted.length) return false;
+  for (let i = 1; i < wanted.length; i++) {
+    if (shopKey(found[i - 1]) > shopKey(found[i])) return false;
+  }
+  return true;
 }
 
 function locateTargets(seed, targets) {

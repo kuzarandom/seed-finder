@@ -14,6 +14,9 @@ let workersState = [];
 let pendingJaml = null;
 let pendingTargets = null;
 let currentFinish = null;
+let currentOnFound = null;
+let currentMaxResults = 32;
+let currentSeen = new Set();
 
 function motelyModuleUrl() {
   return new URL("./vendor/motely-wasm/dist/index.mjs", window.location.href)
@@ -24,9 +27,12 @@ function threadCount() {
   return Math.min(4, Math.max(1, window.navigator.hardwareConcurrency || 2));
 }
 
-function runTaskWithWorkers(jaml, targets) {
+function runTaskWithWorkers(jaml, targets, options = {}) {
   const dfd = new Deferred();
   let settled = false;
+  currentOnFound = options.onFound || null;
+  currentMaxResults = options.maxResults || 32;
+  currentSeen = new Set();
   pendingJaml = jaml;
   pendingTargets = targets;
 
@@ -35,6 +41,7 @@ function runTaskWithWorkers(jaml, targets) {
     settled = true;
     pendingJaml = null;
     pendingTargets = null;
+    currentFinish = null;
     for (const workerState of workersState) {
       try {
         workerState.port.postMessage({ type: "stop" });
@@ -104,13 +111,17 @@ function startWorkerPool() {
       }
       if (data.type === "found" && currentFinish) {
         workerState.tries = data.tries;
+        if (currentSeen.has(data.seed)) return;
+        currentSeen.add(data.seed);
         const status = taskStatus();
-        currentFinish({
+        const hit = {
           seed: data.seed,
           tries: status.tries,
           time: status.timeSpent,
           locations: data.locations || {},
-        });
+        };
+        if (currentOnFound) currentOnFound(hit);
+        if (currentSeen.size >= currentMaxResults) currentFinish({ done: true });
         return;
       }
       if (data.type === "error" && currentFinish) {
@@ -137,6 +148,7 @@ function searchStartBatch(workerIndex) {
 }
 
 function stopWorkers() {
+  if (currentFinish) currentFinish({ done: true, cancelled: true });
   pendingJaml = null;
   pendingTargets = null;
   for (const workerState of workersState) {

@@ -3,13 +3,760 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>The Egg</title>
+    <title>The Egg — Balatro seed searcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
       crossorigin="anonymous"
     />
+    <style>
+      :root {
+        --felt: #140e12;
+        --felt-2: #1e141c;
+        --panel: #261a24;
+        --panel-2: #32242f;
+        --line: rgba(232, 196, 120, 0.22);
+        --gold: #e8c478;
+        --gold-2: #f3ddab;
+        --red: #e24b4b;
+        --ink: #f7efe3;
+        --muted: #b9a79a;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: Outfit, system-ui, sans-serif;
+        background:
+          radial-gradient(1200px 600px at 50% -10%, rgba(226, 75, 75, 0.18), transparent 55%),
+          radial-gradient(900px 500px at 100% 100%, rgba(232, 196, 120, 0.08), transparent 50%),
+          var(--felt);
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 400px;
+        min-height: 100vh;
+        align-items: stretch;
+      }
+
+      .workspace {
+        min-width: 0;
+        height: 100vh;
+        padding: 12px 16px 16px;
+        overflow: auto;
+      }
+
+      .results-pane {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        padding: 12px 14px 16px;
+        border-left: 1px solid var(--line);
+        background: linear-gradient(180deg, #1c141a, #140e12);
+        overflow: hidden;
+      }
+
+      .results-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .results-head h2 {
+        margin: 0;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.15rem;
+      }
+
+      .results-count {
+        color: var(--gold);
+        font-size: 0.78rem;
+      }
+
+      .seed-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 38vh;
+        overflow-y: auto;
+        padding-right: 4px;
+        scrollbar-color: rgba(232, 196, 120, 0.35) transparent;
+      }
+
+      .results-empty {
+        margin: 12px 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.4;
+      }
+
+      .seed-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #1a1218;
+        color: var(--gold-2);
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.05rem;
+        letter-spacing: 0.06em;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .seed-chip:hover {
+        border-color: var(--gold);
+        background: rgba(232, 196, 120, 0.08);
+      }
+
+      .seed-chip.is-active {
+        border-color: var(--gold);
+        outline: 1px solid var(--gold);
+        background: rgba(232, 196, 120, 0.14);
+      }
+
+      .result-detail {
+        flex: 1;
+        min-height: 0;
+        margin-top: 10px;
+        overflow-y: auto;
+      }
+
+      .hero {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+        margin-bottom: 12px;
+      }
+
+      .egg-mark {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        margin: 0;
+        border-radius: 50% 50% 46% 46%;
+        background: linear-gradient(180deg, #fff6e4 0%, #e8c478 42%, #c4893a 100%);
+        box-shadow: 0 6px 16px rgba(232, 196, 120, 0.25);
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+
+      .hero p {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .engine-pill {
+        display: inline-block;
+        margin: 0 0 0 8px;
+        padding: 1px 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--gold);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        vertical-align: middle;
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .panel {
+        background: linear-gradient(180deg, var(--panel-2), var(--panel));
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 12px 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+      }
+
+      .panel h2 {
+        margin: 0 0 2px;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.05rem;
+      }
+
+      .panel .hint {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .panel-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .panel-head .toolbar,
+      .panel .toolbar {
+        gap: 6px;
+      }
+
+      .panel .input-group {
+        margin-bottom: 0 !important;
+        max-width: none;
+      }
+
+      .panel .form-control,
+      .panel .input-group-text {
+        padding: 0.28rem 0.55rem;
+        font-size: 0.82rem;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .field, .input-group-text, .form-control, .btn, .dropdown-menu {
+        font-family: Outfit, system-ui, sans-serif;
+      }
+
+      .input-group-text {
+        background: #1a1218;
+        border-color: var(--line);
+        color: var(--muted);
+      }
+
+      .form-control, .form-control:disabled {
+        background: #1a1218;
+        border-color: var(--line);
+        color: var(--ink);
+      }
+
+      .form-control:focus {
+        background: #1a1218;
+        border-color: var(--gold);
+        color: var(--ink);
+        box-shadow: 0 0 0 0.2rem rgba(232, 196, 120, 0.15);
+      }
+
+      .form-control::placeholder {
+        color: #7d6c64;
+      }
+
+      .btn-ghost, .dropdown-toggle {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--gold-2);
+      }
+
+      .btn-ghost:hover, .dropdown-toggle:hover,
+      .btn-ghost:focus, .dropdown-toggle:focus {
+        background: rgba(232, 196, 120, 0.1);
+        border-color: var(--gold);
+        color: var(--gold-2);
+      }
+
+      .btn-add {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #2a1608;
+        font-weight: 700;
+      }
+
+      .btn-add:disabled {
+        background: #4a3b32;
+        border-color: #4a3b32;
+        color: #9b8b7e;
+      }
+
+      .dropdown-menu {
+        background: #1a1218;
+        border: 1px solid var(--line);
+      }
+
+      .dropdown-item {
+        color: var(--ink);
+      }
+
+      .dropdown-item:hover {
+        background: rgba(232, 196, 120, 0.12);
+        color: var(--gold-2);
+      }
+
+      .chip-group {
+        display: inline-flex;
+        overflow: hidden;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+      }
+
+      .chip, .chip-x {
+        border: 0;
+        background: #3a2836;
+        color: var(--ink);
+        padding: 6px 12px;
+        font-size: 0.88rem;
+      }
+
+      .chip-x {
+        background: #4a3144;
+        color: var(--gold-2);
+        padding-left: 8px;
+        padding-right: 10px;
+      }
+
+      .chip-x:hover { background: var(--red); color: white; }
+
+      .catalog {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+      }
+
+      .card-preview {
+        position: sticky;
+        top: 0;
+        z-index: 8;
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 12px;
+        align-items: center;
+        min-height: 0;
+        margin-bottom: 10px;
+        padding: 8px 10px;
+        border-radius: 14px;
+        text-align: left;
+        background:
+          radial-gradient(circle at 18% 20%, rgba(232, 196, 120, 0.16), transparent 52%),
+          #1a1218;
+        border: 1px solid var(--line);
+      }
+
+      .stage-placeholder {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        min-height: 56px;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.35;
+        padding: 0 4px;
+      }
+
+      .stage-art {
+        width: 72px;
+        height: 96px;
+        margin: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        background: linear-gradient(180deg, #3a2a36, #1b1218);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+      }
+
+      .stage-copy { min-width: 0; }
+
+      .stage-art img,
+      .card-art img,
+      .result-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #120c10;
+      }
+
+      .stage-name {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .stage-rarity {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--gold-2);
+        border: 1px solid var(--line);
+      }
+
+      .stage-effect {
+        margin: 4px 0 0;
+        color: var(--ink);
+        font-size: 0.78rem;
+        line-height: 1.35;
+      }
+
+      .card-rail {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+        gap: 6px;
+        max-height: 148px;
+        overflow-y: auto;
+        padding: 0 2px 4px 0;
+        scrollbar-color: rgba(232, 196, 120, 0.35) transparent;
+      }
+
+      .legendary-rail {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        max-height: none;
+        overflow: visible;
+      }
+
+      .game-card {
+        position: relative;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.18s ease;
+      }
+
+      .game-card:hover { transform: translateY(-2px); }
+
+      .card-art {
+        display: block;
+        width: 100%;
+        aspect-ratio: 71 / 95;
+        border-radius: 12px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 30% 20%, rgba(255,255,255,0.18), transparent 40%),
+          linear-gradient(180deg, #3a2a36, #1b1218);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.08);
+        transition: box-shadow 0.18s ease, border-color 0.18s ease;
+      }
+
+      .game-card:hover .card-art {
+        border-color: rgba(232, 196, 120, 0.55);
+        box-shadow: 0 14px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(232, 196, 120, 0.2);
+      }
+
+      .rarity-legendary .card-art,
+      .rarity-legendary.stage-art {
+        border-color: rgba(232, 196, 120, 0.7);
+        box-shadow: 0 10px 28px rgba(232, 196, 120, 0.22);
+      }
+      .rarity-rare .card-art,
+      .rarity-rare.stage-art { border-color: rgba(226, 75, 75, 0.55); }
+      .rarity-uncommon .card-art,
+      .rarity-uncommon.stage-art { border-color: rgba(90, 196, 130, 0.45); }
+      .rarity-voucher .card-art,
+      .rarity-voucher.stage-art { border-color: rgba(120, 180, 255, 0.4); }
+
+      .card-art.no-art,
+      .stage-art.no-art,
+      .result-thumb.no-art {
+        background: linear-gradient(160deg, #5a3d4e, #241820);
+      }
+
+      .card-name {
+        display: block;
+        margin-top: 3px;
+        color: var(--ink);
+        font-size: 0.62rem;
+        font-weight: 600;
+        line-height: 1.15;
+      }
+
+      .game-card.is-selected .card-art {
+        outline: 2px solid var(--gold);
+        outline-offset: 1px;
+      }
+
+      .game-card.is-selected::after {
+        content: "✓";
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--gold);
+        color: #2a1608;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 16px;
+      }
+
+      .selected-rail {
+        display: flex;
+        flex-wrap: wrap;
+        max-height: 92px;
+        overflow-y: auto;
+        margin-top: 2px;
+      }
+
+      .selected-rail .game-card {
+        width: 56px;
+      }
+
+      .selected-rail .game-card.is-selected::after {
+        display: none;
+      }
+
+      .selected-rail.ordered-rail .game-card {
+        width: 68px;
+      }
+
+      .card-order {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        margin-top: 4px;
+      }
+
+      .order-num {
+        min-width: 1.1em;
+        color: var(--gold-2);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .order-btn {
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: #1a1218;
+        color: var(--gold-2);
+        line-height: 16px;
+        font-size: 0.75rem;
+      }
+
+      .order-btn:hover:not(:disabled) {
+        background: rgba(232, 196, 120, 0.16);
+        border-color: var(--gold);
+      }
+
+      .order-btn:disabled {
+        opacity: 0.28;
+      }
+
+      .card-remove {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 22px;
+        height: 22px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(20,10,14,0.82);
+        color: white;
+        line-height: 20px;
+        z-index: 2;
+      }
+
+      .card-remove:hover { background: var(--red); }
+
+      .preview-label {
+        margin: 6px 0 4px;
+        color: var(--muted);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .empty-matches {
+        color: var(--muted);
+        font-size: 0.78rem;
+        padding: 8px 4px;
+      }
+
+      .result-item {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin: 0 0 10px;
+      }
+
+      .result-item:last-child { margin-bottom: 0; }
+
+      .result-thumb {
+        flex: 0 0 44px;
+        width: 44px;
+        height: 58px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: #1a1218;
+      }
+
+      .result-item strong {
+        display: block;
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 900px) {
+        .shell { grid-template-columns: 1fr; }
+        .workspace { height: auto; }
+        .results-pane {
+          height: auto;
+          min-height: 42vh;
+          position: relative;
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+        .filters { grid-template-columns: 1fr; }
+        .card-preview { grid-template-columns: 60px 1fr; gap: 8px; }
+        .stage-art { width: 60px; height: 80px; }
+        .legendary-rail { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); }
+        .result-row { grid-template-columns: 1fr; }
+      }
+
+      .check-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        background: #1a1218;
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      .search-dock {
+        position: sticky;
+        bottom: 0;
+        z-index: 12;
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 0 6px;
+        background: linear-gradient(180deg, transparent, var(--felt) 28%);
+      }
+
+      .results-status {
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.35;
+        margin-bottom: 10px;
+      }
+
+      .btn-search, #cancel-button {
+        min-width: 180px;
+        padding: 10px 22px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #f1d392, #d7a44a);
+        color: #2a1608;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.04em;
+        box-shadow: 0 8px 18px rgba(215, 164, 74, 0.28);
+      }
+
+      #cancel-button {
+        background: linear-gradient(180deg, #ef7a7a, #c43b3b);
+        color: white;
+      }
+
+      .btn-search:hover, #cancel-button:hover { filter: brightness(1.05); }
+
+      #search-status {
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .result-card {
+        width: 100%;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        text-align: left;
+      }
+
+      .seed-block {
+        text-align: left;
+        padding: 0 0 10px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 10px;
+      }
+
+      .seed-block a {
+        font-family: Fraunces, Georgia, serif;
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        color: var(--gold-2);
+        text-decoration: none;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+      }
+
+      .copy-hint {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .result-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 8px 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-size: 0.95rem;
+      }
+
+      .result-row:last-child { border-bottom: 0; }
+      .result-row dt { color: var(--muted); margin: 0; }
+      .result-row dd { margin: 0; }
+      .loc { color: var(--ink); }
+      .stats { color: var(--gold); }
+
+      .modal-content {
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+
+      .modal-header, .modal-footer { border-color: var(--line); }
+      .modal-title { font-family: Fraunces, Georgia, serif; }
+    </style>
   </head>
 
   <body>
@@ -23,7 +770,7 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Input validation errors</h5>
+            <h5 class="modal-title" id="validation-modal-label">Check your filters</h5>
           </div>
           <div id="validation-modal-body" class="modal-body">
             Errors will be here
@@ -31,7 +778,7 @@
           <div class="modal-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="btn btn-ghost"
               data-bs-dismiss="modal"
             >
               Close
@@ -41,201 +788,228 @@
       </div>
     </div>
 
-    <div class="container">
-      <h1 class="text-center my-5">The Egg - balatro seed searcher</h1>
-      <p class="text-center text-secondary mb-4">
-        Engine: Motely (WASM SIMD)
-      </p>
-
-      <div class="border border-4 rounded px-2 mb-2">
-        <h3 class="text-center my-2">Legendaries</h3>
-        <div id="add-legendary-toolbar" class="btn-toolbar">
-          <button
-            class="btn btn-secondary dropdown-toggle mb-2 me-2"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Add legendary
-          </button>
-          <ul id="add-legendary-menu" class="dropdown-menu"></ul>
-
-          <div
-            id="legendary-negatives-input-group"
-            class="input-group mb-2 me-2"
-          >
-            <div class="input-group-text">Negatives</div>
-            <input
-              type="number"
-              id="legendary-negatives"
-              class="form-control"
-              style="max-width: 75px"
-              value="0"
-              oninput="validateInputUint(this)"
-            />
-          </div>
-          <div id="legendary-ante-input-group" class="input-group mb-2 me-2">
-            <div class="input-group-text">Max ante</div>
-            <input
-              type="number"
-              id="legendary-ante"
-              class="form-control"
-              style="max-width: 75px"
-              value="0"
-              oninput="validateInputUint(this)"
-            />
-          </div>
+    <div class="shell">
+      <div class="workspace">
+      <header class="hero">
+        <div class="egg-mark" aria-hidden="true"></div>
+        <div>
+          <h1>The Egg</h1>
+          <p>Find a Balatro seed that matches your run. <span class="engine-pill">Motely · WASM SIMD</span></p>
         </div>
+      </header>
+
+      <div id="card-preview" class="card-preview">
+        <div class="stage-placeholder">Hover a card to preview its ability</div>
       </div>
 
-      <div class="border border-4 rounded px-2 mb-2">
-        <h3 class="text-center my-2">Vouchers</h3>
-        <div id="add-voucher-toolbar" class="btn-toolbar">
-          <div class="input-group mb-2 me-2">
-            <div class="input-group-text">Add voucher</div>
-            <input
-              type="search"
-              class="form-control"
-              placeholder="Type to filter..."
-              style="min-width: 150px"
-              oninput="findVoucher(this.value)"
-            />
-            <input
-              type="text"
-              id="add-voucher-suggestion"
-              class="form-control"
-              style="min-width: 150px"
-              disabled
-            />
-            <button
-              id="add-voucher-button"
-              class="btn btn-secondary"
-              type="button"
-              onclick="addVoucher()"
-              disabled
-            >
-              +
-            </button>
-          </div>
-          <div id="voucher-ante-input-group" class="input-group mb-2 me-2">
-            <div class="input-group-text">Max ante</div>
-            <input
-              type="number"
-              id="voucher-ante"
-              class="form-control"
-              style="max-width: 75px"
-              value="0"
-              oninput="validateInputUint(this)"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="border border-4 rounded px-2 mb-2">
-        <h3 class="text-center my-2">First buffoon pack (one of)</h3>
-        <div id="add-joker-pack-toolbar" class="btn-toolbar">
-          <div class="input-group mb-2 me-2">
-            <div class="input-group-text">Add joker</div>
-            <input
-              type="search"
-              class="form-control"
-              placeholder="Type to filter..."
-              style="min-width: 150px"
-              oninput="findJokerPack(this.value)"
-            />
-            <input
-              type="text"
-              id="add-joker-pack-suggestion"
-              class="form-control"
-              style="min-width: 150px"
-              disabled
-            />
-            <button
-              id="add-joker-pack-button"
-              class="btn btn-secondary"
-              type="button"
-              onclick="addJokerPack()"
-              disabled
-            >
-              +
-            </button>
-          </div>
-          <div
-            id="joker-pack-negative-input-group"
-            class="input-group mb-2 me-2"
-          >
-            <div class="input-group-text">Negative</div>
-            <div class="input-group-text">
-              <input
-                type="checkbox"
-                id="joker-pack-negative"
-                class="form-check-input mt-0"
-              />
+      <div class="filters">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Legendaries</h2>
+              <p class="hint">Tap a card to include it</p>
+            </div>
+            <div id="add-legendary-toolbar" class="toolbar btn-toolbar">
+              <ul id="add-legendary-menu" class="dropdown-menu d-none"></ul>
+              <div
+                id="legendary-negatives-input-group"
+                class="input-group"
+                style="max-width: 150px"
+              >
+                <div class="input-group-text">Negatives</div>
+                <input
+                  type="number"
+                  id="legendary-negatives"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
+              <div id="legendary-ante-input-group" class="input-group" style="max-width: 140px">
+                <div class="input-group-text">Max ante</div>
+                <input
+                  type="number"
+                  id="legendary-ante"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
             </div>
           </div>
-          <div id="joker-pack-ankh-input-group" class="input-group mb-2 me-2">
-            <div class="input-group-text">Ankh in next pack</div>
-            <div class="input-group-text">
-              <input
-                type="checkbox"
-                id="joker-pack-ankh"
-                class="form-check-input mt-0"
-              />
+          <div id="legendary-gallery" class="card-rail legendary-rail"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Vouchers</h2>
+              <p class="hint">Must appear by this ante</p>
+            </div>
+            <div id="add-voucher-toolbar" class="toolbar btn-toolbar">
+              <div class="input-group" style="min-width: 180px; flex: 1">
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search vouchers..."
+                  oninput="findVoucher(this.value)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addVoucher();}"
+                />
+                <input
+                  type="text"
+                  id="add-voucher-suggestion"
+                  class="form-control d-none"
+                  disabled
+                />
+                <button
+                  id="add-voucher-button"
+                  class="btn btn-add d-none"
+                  type="button"
+                  onclick="addVoucher()"
+                  disabled
+                >
+                  +
+                </button>
+              </div>
+              <div id="voucher-ante-input-group" class="input-group" style="max-width: 140px">
+                <div class="input-group-text">Max ante</div>
+                <input
+                  type="number"
+                  id="voucher-ante"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
             </div>
           </div>
-        </div>
+          <div id="voucher-gallery" class="card-rail"></div>
+          <p class="preview-label">Selected</p>
+          <div id="voucher-selected" class="card-rail selected-rail"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>First buffoon pack</h2>
+              <p class="hint">Any of these in the opening pack</p>
+            </div>
+            <div id="add-joker-pack-toolbar" class="toolbar btn-toolbar">
+              <div class="input-group" style="min-width: 180px; flex: 1">
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search jokers..."
+                  oninput="findJokerPack(this.value)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addJokerPack();}"
+                />
+                <input
+                  type="text"
+                  id="add-joker-pack-suggestion"
+                  class="form-control d-none"
+                  disabled
+                />
+                <button
+                  id="add-joker-pack-button"
+                  class="btn btn-add d-none"
+                  type="button"
+                  onclick="addJokerPack()"
+                  disabled
+                >
+                  +
+                </button>
+              </div>
+              <label
+                id="joker-pack-negative-input-group"
+                class="check-pill"
+              >
+                Negative
+                <input
+                  type="checkbox"
+                  id="joker-pack-negative"
+                  class="form-check-input mt-0"
+                />
+              </label>
+              <label id="joker-pack-ankh-input-group" class="check-pill">
+                Ankh next pack
+                <input
+                  type="checkbox"
+                  id="joker-pack-ankh"
+                  class="form-check-input mt-0"
+                />
+              </label>
+            </div>
+          </div>
+          <div id="joker-pack-gallery" class="card-rail"></div>
+          <p class="preview-label">Selected</p>
+          <div id="joker-pack-selected" class="card-rail selected-rail"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Jokers in shop</h2>
+              <p class="hint">Left → right is the order you want to find them</p>
+            </div>
+            <div id="add-joker-shop-toolbar" class="toolbar btn-toolbar">
+              <div class="input-group" style="min-width: 180px; flex: 1">
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search jokers..."
+                  oninput="findJokerShop(this.value)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addJokerShop();}"
+                />
+                <input
+                  type="text"
+                  id="add-joker-shop-suggestion"
+                  class="form-control d-none"
+                  disabled
+                />
+                <button
+                  id="add-joker-shop-button"
+                  class="btn btn-add d-none"
+                  type="button"
+                  onclick="addJokerShop()"
+                  disabled
+                >
+                  +
+                </button>
+              </div>
+              <div id="joker-shop-ante-input-group" class="input-group" style="max-width: 140px">
+                <div class="input-group-text">Max ante</div>
+                <input
+                  type="number"
+                  id="joker-shop-ante"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="joker-shop-gallery" class="card-rail"></div>
+          <p class="preview-label">Wanted first → last</p>
+          <div id="joker-shop-selected" class="card-rail selected-rail ordered-rail"></div>
+        </section>
       </div>
 
-      <div class="border border-4 rounded px-2 mb-2">
-        <h3 class="text-center my-2">Jokers in shop</h3>
-        <div id="add-joker-shop-toolbar" class="btn-toolbar">
-          <div class="input-group mb-2 me-2">
-            <div class="input-group-text">Add joker</div>
-            <input
-              type="search"
-              class="form-control"
-              placeholder="Type to filter..."
-              style="min-width: 150px"
-              oninput="findJokerShop(this.value)"
-            />
-            <input
-              type="text"
-              id="add-joker-shop-suggestion"
-              class="form-control"
-              style="min-width: 150px"
-              disabled
-            />
-            <button
-              id="add-joker-shop-button"
-              class="btn btn-secondary"
-              type="button"
-              onclick="addJokerShop()"
-              disabled
-            >
-              +
-            </button>
-          </div>
-          <div id="joker-shop-ante-input-group" class="input-group mb-2 me-2">
-            <div class="input-group-text">Max ante</div>
-            <input
-              type="number"
-              id="joker-shop-ante"
-              class="form-control"
-              style="max-width: 75px"
-              value="0"
-              oninput="validateInputUint(this)"
-            />
-          </div>
-        </div>
+      <div id="search" class="search-dock"></div>
       </div>
 
-      <hr class="border border-secondary border-2 opacity-50 w-75 mx-auto" />
-
-      <div
-        id="search"
-        class="d-flex flex-column justify-content-center text-center"
-      ></div>
+      <aside class="results-pane" aria-label="Search results">
+        <div class="results-head">
+          <h2>Results</h2>
+          <span id="results-count" class="results-count">0 seeds</span>
+        </div>
+        <div id="search-status" class="results-status">Idle</div>
+        <div id="seed-list" class="seed-list">
+          <p class="results-empty">Find a seed to see matches here</p>
+        </div>
+        <div id="result-detail" class="result-detail"></div>
+      </aside>
     </div>
+
 
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
@@ -446,40 +1220,307 @@
         rareJokers
       );
 
-      (function onLoad() {
-        setupLegendariesDropdown(legendaryJokers);
+      const voucherSet = new Set(vouchers);
+      const legendarySet = new Set(legendaryJokers);
+      const rareSet = new Set(rareJokers);
+      const uncommonSet = new Set(uncommonJokers);
+
+      const featuredJokers = [
+        "Blueprint",
+        "Brainstorm",
+        "Photograph",
+        "Baron",
+        "Mime",
+        "Oops! All 6s",
+        "DNA",
+        "Cavendish",
+        "The Idol",
+        "Ancient Joker",
+        "Bloodstone",
+        "Sock and Buskin",
+        "Hanging Chad",
+        "Pareidolia",
+        "Constellation",
+      ];
+
+      let cardAbilities = {};
+      let abilityByFold = {};
+
+      (async function onLoad() {
+        try {
+          const data = await fetch("abilities.json").then((r) => r.json());
+          setAbilities(data);
+        } catch (err) {}
+        renderLegendaryGallery();
+        renderCardMatches("voucher", "", 32);
+        renderCardMatches("joker-pack", "", 16);
+        renderCardMatches("joker-shop", "", 16);
+        bindCardPreview();
         setupSearchButton();
       })();
 
-      function setupLegendariesDropdown(jokers) {
-        const dropdownMenu = document.getElementById("add-legendary-menu");
-        jokers.forEach((joker) => {
-          const jokerAsId = formatAsId(joker);
-          const newElem = `
-            <li>
-              <button
-                id="${jokerAsId}"
-                class="dropdown-item"
-                type="button"
-                onclick="addLegendary('${joker}')"
-              >
-                ${joker}
-              </button>
-            </li>
-          `;
-          dropdownMenu.insertAdjacentHTML("beforeend", newElem);
+      function foldName(name) {
+        return String(name)
+          .normalize("NFKD")
+          .replace(/\p{M}/gu, "")
+          .replace(/[^a-z0-9]/gi, "")
+          .toLowerCase();
+      }
+
+      function setAbilities(data) {
+        cardAbilities = data || {};
+        abilityByFold = {};
+        Object.keys(cardAbilities).forEach((name) => {
+          abilityByFold[foldName(name)] = cardAbilities[name];
         });
+      }
+
+      function abilityOf(name) {
+        return cardAbilities[name] || abilityByFold[foldName(name)] || "";
+      }
+
+      function cardArtUrl(name) {
+        return (
+          "https://balatrowiki.org/w/Special:FilePath/" +
+          encodeURIComponent(name.replaceAll(" ", "_")) +
+          ".png"
+        );
+      }
+
+      function rarityOf(name) {
+        if (legendarySet.has(name)) return "legendary";
+        if (voucherSet.has(name)) return "voucher";
+        if (rareSet.has(name)) return "rare";
+        if (uncommonSet.has(name)) return "uncommon";
+        return "common";
+      }
+
+      function escapeAttr(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      function gameCardHtml(name, opts) {
+        const rarity = rarityOf(name);
+        const id = opts.id || "";
+        const nameClass = opts.nameClass || "";
+        const selected = opts.selected ? " is-selected" : "";
+        const kind = opts.kind || "";
+        const effect = abilityOf(name);
+        const removable = opts.removable
+          ? `<button type="button" class="card-remove" aria-label="Remove ${escapeAttr(name)}">×</button>`
+          : "";
+        const orderable = opts.orderable
+          ? `<div class="card-order">
+              <button type="button" class="order-btn" data-dir="-1" aria-label="Move earlier">‹</button>
+              <span class="order-num">1</span>
+              <button type="button" class="order-btn" data-dir="1" aria-label="Move later">›</button>
+            </div>`
+          : "";
+        return `
+          <div ${id ? `id="${id}"` : ""} class="game-card rarity-${rarity}${selected}" data-name="${escapeAttr(name)}" data-kind="${kind}" role="button" tabindex="0"${effect ? ` title="${escapeAttr(effect)}"` : ""}>
+            ${removable}
+            <span class="card-art">
+              <img src="${cardArtUrl(name)}" alt="${escapeAttr(name)}" onerror="this.parentElement.classList.add('no-art'); this.remove();">
+            </span>
+            <span class="${nameClass} card-name">${escapeHtml(name)}</span>
+            ${orderable}
+          </div>
+        `;
+      }
+
+      function stageIdForKind(kind) {
+        return "card-preview";
+      }
+
+      function fillStage(kind, name) {
+        const stage = document.getElementById(stageIdForKind(kind));
+        if (!stage || !name) return;
+        if (stage.dataset.name === name) return;
+        stage.dataset.name = name;
+        const rarity = rarityOf(name);
+        const effect = abilityOf(name);
+        stage.innerHTML = `
+          <div class="stage-art rarity-${rarity}">
+            <img src="${cardArtUrl(name)}" alt="${escapeAttr(name)}" onerror="this.parentElement.classList.add('no-art'); this.remove();">
+          </div>
+          <div class="stage-copy">
+            <strong class="stage-name">${escapeHtml(name)}</strong>
+            <span class="stage-rarity">${rarity}</span>
+            ${effect ? `<p class="stage-effect">${escapeHtml(effect)}</p>` : ""}
+          </div>
+        `;
+      }
+
+      function bindCardPreview() {
+        document.addEventListener("pointerover", (e) => {
+          const card = e.target.closest(".game-card[data-name]");
+          if (!card) return;
+          fillStage(card.dataset.kind, card.dataset.name);
+        });
+
+        document.addEventListener("click", (e) => {
+          const orderBtn = e.target.closest(".order-btn");
+          if (orderBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = orderBtn.closest(".game-card");
+            if (card) moveShopJoker(card, Number(orderBtn.dataset.dir));
+            return;
+          }
+
+          const removeBtn = e.target.closest(".card-remove");
+          if (removeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = removeBtn.closest(".game-card");
+            if (!card) return;
+            if (card.dataset.kind === "voucher") removeVoucher(card.id);
+            else if (card.dataset.kind === "joker-pack") removeJokerPack(card.id);
+            else if (card.dataset.kind === "joker-shop") removeJokerShop(card.id);
+            return;
+          }
+
+          const card = e.target.closest(".game-card[data-kind]");
+          if (!card) return;
+          const name = card.dataset.name;
+          const kind = card.dataset.kind;
+          if (kind === "legendary") toggleLegendary(name);
+          else if (kind === "voucher" && !card.closest("#voucher-selected")) {
+            addVoucherByName(name);
+          } else if (
+            kind === "joker-pack" &&
+            !card.closest("#joker-pack-selected")
+          ) {
+            addJokerPackByName(name);
+          } else if (
+            kind === "joker-shop" &&
+            !card.closest("#joker-shop-selected")
+          ) {
+            addJokerShopByName(name);
+          }
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          if (e.target.closest(".card-remove, .order-btn")) return;
+          const card = e.target.closest(".game-card[data-kind]");
+          if (!card) return;
+          e.preventDefault();
+          card.click();
+        });
+      }
+
+      function renderLegendaryGallery() {
+        const gallery = document.getElementById("legendary-gallery");
+        gallery.innerHTML = legendaryJokers
+          .map((joker) =>
+            gameCardHtml(joker, {
+              id: formatAsId(joker),
+              kind: "legendary",
+            })
+          )
+          .join("");
+        fillStage("legendary", legendaryJokers[0]);
+      }
+
+      function toggleLegendary(joker) {
+        const card = document.getElementById(formatAsId(joker));
+        const selected = !card.classList.contains("is-selected");
+        card.classList.toggle("is-selected", selected);
+        const nameEl = card.querySelector(".card-name");
+        nameEl.classList.toggle("legendary", selected);
+        fillStage("legendary", joker);
+      }
+
+      function filterNames(list, query, limit, featured) {
+        const cap = limit || 18;
+        const q = query.trim().toLowerCase();
+        if (!q) {
+          const source = featured && featured.length ? featured : list;
+          return source.slice(0, cap);
+        }
+        return list
+          .filter((name) => name.toLowerCase().includes(q))
+          .sort((a, b) => {
+            const as = a.toLowerCase().startsWith(q) ? 0 : 1;
+            const bs = b.toLowerCase().startsWith(q) ? 0 : 1;
+            return as - bs || a.localeCompare(b);
+          })
+          .slice(0, cap);
+      }
+
+      function renderCardMatches(kind, query, limit) {
+        const map = {
+          voucher: {
+            list: vouchers,
+            gallery: "voucher-gallery",
+            featured: vouchers,
+          },
+          "joker-pack": {
+            list: nonLegendaryJokers,
+            gallery: "joker-pack-gallery",
+            idPrefix: "joker-pack-",
+            featured: featuredJokers,
+          },
+          "joker-shop": {
+            list: nonLegendaryJokers,
+            gallery: "joker-shop-gallery",
+            idPrefix: "joker-shop-",
+            featured: featuredJokers,
+          },
+        };
+        const cfg = map[kind];
+        const gallery = document.getElementById(cfg.gallery);
+        const matches = filterNames(
+          cfg.list,
+          query,
+          limit || 18,
+          cfg.featured
+        ).filter((name) => {
+          const id = (cfg.idPrefix || "") + formatAsId(name);
+          return !document.getElementById(id);
+        });
+        gallery.innerHTML = matches.length
+          ? matches
+              .map((name) => gameCardHtml(name, { kind }))
+              .join("")
+          : `<p class="empty-matches">No cards match that name</p>`;
+        syncSelectedLabel(kind);
+      }
+
+      function syncSelectedLabel(kind) {
+        const selectedId = {
+          voucher: "voucher-selected",
+          "joker-pack": "joker-pack-selected",
+          "joker-shop": "joker-shop-selected",
+        }[kind];
+        if (!selectedId) return;
+        const rail = document.getElementById(selectedId);
+        const label = rail && rail.previousElementSibling;
+        if (label && label.classList.contains("preview-label")) {
+          label.hidden = rail.children.length === 0;
+        }
       }
 
       function setupSearchButton() {
         const searchDiv = document.getElementById("search");
+        if (searchDiv.querySelector(".btn-search:not(#cancel-button)")) return;
         const newElem = `
           <button
-            class="btn btn-primary mx-auto mb-2"
+            class="btn-search"
             type="button"
             onclick="search(this)"
           >
-            Search
+            Find seed
           </button>
         `;
         searchDiv.insertAdjacentHTML("beforeend", newElem);
@@ -490,7 +1531,7 @@
         const newElem = `
           <button
             id="cancel-button"
-            class="btn btn-primary mx-auto mb-2"
+            class="btn-search"
             type="button"
             onclick="cancel()"
           >
@@ -506,32 +1547,44 @@
       }
 
       function setupSearchStatusBar() {
-        const searchDiv = document.getElementById("search");
-        const newElem = `
-          <div id="search-status" class="mb-2">
-            Tries: 0; Time: 0s; Rate: 0 per sec (booting Motely…)
-          </div>
-        `;
-        searchDiv.insertAdjacentHTML("afterbegin", newElem);
+        const el = document.getElementById("search-status");
+        if (el) {
+          el.textContent =
+            "Tries: 0; Time: 0s; Rate: 0 per sec (booting Motely…)";
+        }
       }
 
       function removeSearchStatusBar() {
-        const searchStatusBar = document.getElementById("search-status");
-        if (searchStatusBar) searchStatusBar.remove();
+        const el = document.getElementById("search-status");
+        if (!el) return;
+        if (!foundHits.length) el.textContent = "Idle";
       }
 
       function insertIntoSearchStatusBar(tries, time) {
         const searchStatusBar = document.getElementById("search-status");
+        if (!searchStatusBar) return;
         const elapsed = Number(time) || 0;
         const rate = elapsed > 0 ? (tries / elapsed).toFixed(0) : "0";
-        searchStatusBar.innerHTML = `Tries: ${tries}; Time: ${time}s; Rate: ${rate} per sec`;
+        searchStatusBar.textContent = `Tries: ${tries}; Time: ${time}s; Rate: ${rate} per sec`;
       }
 
       function locLine(text) {
-        return `<div>${text}</div>`;
+        return `<div class="loc">${text}</div>`;
       }
 
-      function formatLoc(item, extra) {
+      function resultItemHtml(name, metaHtml, rank) {
+        return `<div class="result-item">
+          <span class="result-thumb rarity-${rarityOf(name)}">
+            <img src="${cardArtUrl(name)}" alt="" onerror="this.parentElement.classList.add('no-art'); this.remove();">
+          </span>
+          <div>
+            <strong>${rank ? `${rank}. ` : ""}${name}</strong>
+            ${metaHtml}
+          </div>
+        </div>`;
+      }
+
+      function formatLoc(item, extra, rank) {
         const bits = [`Ante ${item.ante}`];
         if (item.pack) {
           bits.push(
@@ -542,160 +1595,177 @@
         }
         if (item.slot) bits.push(`slot ${item.slot}`);
         if (item.edition) bits.push(item.edition);
-        return locLine(`${item.label}: ${bits.join(", ")}${extra || ""}`);
+        return resultItemHtml(
+          item.label,
+          locLine(`${bits.join(", ")}${extra || ""}`),
+          rank
+        );
       }
 
-      function setupSearchResultArea(result) {
-        const searchDiv = document.getElementById("search");
+      function resultDetailHtml(result) {
         const locs = result.locations || {};
         const legendaryHtml =
           (locs.legendaries || []).map((item) => formatLoc(item)).join("") ||
-          "-";
+          "—";
         const voucherHtml =
           (locs.vouchers || [])
-            .map((item) => locLine(`${item.label}: Ante ${item.ante}`))
-            .join("") || "-";
+            .map((item) =>
+              resultItemHtml(item.label, locLine(`Ante ${item.ante}`))
+            )
+            .join("") || "—";
         const packHtml =
           (locs.jokersPack || []).map((item) => formatLoc(item)).join("") ||
-          "-";
+          "";
         const ankhHtml =
           (locs.ankh || []).map((item) => formatLoc(item)).join("");
+        const packBlock = packHtml + ankhHtml || "—";
         const shopHtml =
-          (locs.jokersShop || []).map((item) => formatLoc(item)).join("") ||
-          "-";
-        const newElem = `
-          <table id="search-result" class="table table-bordered mb-2">
-            <thead>
-              <tr>
-                <th scope="col">Param</th>
-                <th scope="col">Result</th>
-                <th scope="col">Extra</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Tries</td>
-                <td>${result.tries}</td>
-                <td>-</td>
-              </tr>
-              <tr>
-                <td>Time</td>
-                <td>${result.time}s</td>
-                <td>-</td>
-              </tr>
-              <tr>
-                <td>Seed</td>
-                <td>
-                  <a
-                    role="button"
-                    tabindex="0"
-                    class="link-underline link-underline-opacity-0"
-                    onclick="navigator.clipboard.writeText(this.innerHTML.trim())"
-                  >
-                    ${result.seed}
-                  </a>
-                </td>
-                <td>-</td>
-              </tr>
-              <tr>
-                <td>Legendaries</td>
-                <td>${legendaryHtml}</td>
-                <td>Ante and pack where The Soul appears</td>
-              </tr>
-              <tr>
-                <td>Voucher antes</td>
-                <td>${voucherHtml}</td>
-                <td>Ante whose voucher is the one you picked</td>
-              </tr>
-              <tr>
-                <td>First buffoon pack</td>
-                <td>${packHtml}${ankhHtml}</td>
-                <td>Pack index and card slot (1-based)</td>
-              </tr>
-              <tr>
-                <td>Jokers in shop</td>
-                <td>${shopHtml}</td>
-                <td>Ante and shop slot (1-based)</td>
-              </tr>
-            </tbody>
-          </table>
+          (locs.jokersShop || [])
+            .map((item, i) => formatLoc(item, "", i + 1))
+            .join("") || "—";
+        return `
+          <div class="result-card">
+            <div class="seed-block">
+              <a
+                role="button"
+                tabindex="0"
+                onclick="navigator.clipboard.writeText(this.innerText.trim())"
+              >${result.seed}</a>
+              <span class="copy-hint">Click seed to copy</span>
+            </div>
+            <div class="result-row">
+              <dt>Search</dt>
+              <dd class="stats">${result.tries} tries · ${result.time}s</dd>
+            </div>
+            <div class="result-row">
+              <dt>Legendaries</dt>
+              <dd>${legendaryHtml}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Vouchers</dt>
+              <dd>${voucherHtml}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Buffoon pack</dt>
+              <dd>${packBlock}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Shop (in order)</dt>
+              <dd>${shopHtml}</dd>
+            </div>
+          </div>
         `;
-        searchDiv.insertAdjacentHTML("afterbegin", newElem);
+      }
+
+      let foundHits = [];
+      let selectedSeed = null;
+
+      function clearResultsPane(searching) {
+        foundHits = [];
+        selectedSeed = null;
+        const count = document.getElementById("results-count");
+        if (count) count.textContent = "0 seeds";
+        const list = document.getElementById("seed-list");
+        if (list) {
+          list.innerHTML = searching
+            ? '<p class="results-empty">Searching…</p>'
+            : '<p class="results-empty">Find a seed to see matches here</p>';
+        }
+        const detail = document.getElementById("result-detail");
+        if (detail) detail.innerHTML = "";
+      }
+
+      function addFoundHit(hit) {
+        if (foundHits.some((h) => h.seed === hit.seed)) return;
+        foundHits.push(hit);
+        const count = document.getElementById("results-count");
+        if (count) {
+          count.textContent =
+            foundHits.length === 1 ? "1 seed" : `${foundHits.length} seeds`;
+        }
+        renderSeedList();
+        if (foundHits.length === 1) selectFoundHit(hit.seed);
+      }
+
+      function renderSeedList() {
+        const list = document.getElementById("seed-list");
+        if (!list) return;
+        if (foundHits.length === 0) {
+          list.innerHTML = '<p class="results-empty">No matching seeds yet</p>';
+          return;
+        }
+        list.innerHTML = foundHits
+          .map(
+            (h) => `
+            <button type="button" class="seed-chip${
+              h.seed === selectedSeed ? " is-active" : ""
+            }" onclick="selectFoundHit('${h.seed}')">
+              <span>${h.seed}</span>
+            </button>`
+          )
+          .join("");
+      }
+
+      function selectFoundHit(seed) {
+        selectedSeed = seed;
+        const hit = foundHits.find((h) => h.seed === seed);
+        renderSeedList();
+        const detail = document.getElementById("result-detail");
+        if (detail) detail.innerHTML = hit ? resultDetailHtml(hit) : "";
+      }
+
+      function setupSearchResultArea(result) {
+        addFoundHit(result);
       }
 
       function removeSearchResultArea() {
-        const searchResultArea = document.getElementById("search-result");
-        if (searchResultArea) searchResultArea.remove();
+        clearResultsPane(false);
       }
 
       function addLegendary(joker) {
-        const jokerAsId = formatAsId(joker);
-        const dropdownItem = document.getElementById(jokerAsId);
-        dropdownItem.remove();
-
-        const newElem = `
-          <div id="${jokerAsId}" class="btn-group mb-2 me-2">
-            <button class="btn btn-secondary legendary" type="button" disabled>
-              ${joker}
-            </button>
-            <button
-              class="btn btn-secondary"
-              type="button"
-              onclick="removeLegendary('${joker}')"
-            >
-              X
-            </button>
-          </div>
-        `;
-
-        const negativesInputGroup = document.getElementById(
-          "legendary-negatives-input-group"
-        );
-        negativesInputGroup.insertAdjacentHTML("beforebegin", newElem);
+        toggleLegendary(joker);
       }
 
       function removeLegendary(joker) {
-        const jokerAsId = formatAsId(joker);
-        const jokerElem = document.getElementById(jokerAsId);
-        jokerElem.remove();
-
-        setupLegendariesDropdown([joker]);
+        const card = document.getElementById(formatAsId(joker));
+        if (card && card.classList.contains("is-selected")) toggleLegendary(joker);
       }
 
       function addVoucher() {
-        const voucherSuggestionItem = document.getElementById(
-          "add-voucher-suggestion"
-        );
-        const addVoucherButton = document.getElementById("add-voucher-button");
-        const voucher = voucherSuggestionItem.placeholder;
-        voucherSuggestionItem.placeholder = "";
-        addVoucherButton.disabled = true;
+        const voucher = document.getElementById("add-voucher-suggestion")
+          .placeholder;
+        if (voucher) addVoucherByName(voucher);
+      }
 
+      function addVoucherByName(voucher) {
+        if (!voucher || document.getElementById(formatAsId(voucher))) return;
         const voucherAsId = formatAsId(voucher);
-        const newElem = `
-          <div id="${voucherAsId}" class="btn-group mb-2 me-2">
-            <button class="btn btn-secondary voucher" type="button" disabled>
-              ${voucher}
-            </button>
-            <button
-              class="btn btn-secondary"
-              type="button"
-              onclick="removeVoucher('${voucherAsId}')"
-            >
-              X
-            </button>
-          </div>
-        `;
-
-        const anteInputGroup = document.getElementById(
-          "voucher-ante-input-group"
+        document.getElementById("voucher-selected").insertAdjacentHTML(
+          "beforeend",
+          gameCardHtml(voucher, {
+            id: voucherAsId,
+            nameClass: "voucher",
+            kind: "voucher",
+            selected: true,
+            removable: true,
+          })
         );
-        anteInputGroup.insertAdjacentHTML("beforebegin", newElem);
+        document.getElementById("add-voucher-suggestion").placeholder = "";
+        document.getElementById("add-voucher-button").disabled = true;
+        const q = document.querySelector(
+          "#add-voucher-toolbar input[type='search']"
+        ).value;
+        renderCardMatches("voucher", q, 32);
+        fillStage("voucher", voucher);
       }
 
       function removeVoucher(voucherAsId) {
         const voucherElem = document.getElementById(voucherAsId);
-        voucherElem.remove();
+        if (voucherElem) voucherElem.remove();
+        const q = document.querySelector(
+          "#add-voucher-toolbar input[type='search']"
+        ).value;
+        renderCardMatches("voucher", q, 32);
       }
 
       function findVoucher(searchStr) {
@@ -718,42 +1788,44 @@
           voucherSuggestionItem.placeholder = "";
           addVoucherButton.disabled = true;
         }
+        renderCardMatches("voucher", searchStr, 32);
       }
 
       function addJokerPack() {
-        const jokerSuggestionItem = document.getElementById(
-          "add-joker-pack-suggestion"
-        );
-        const addJokerButton = document.getElementById("add-joker-pack-button");
-        const joker = jokerSuggestionItem.placeholder;
-        jokerSuggestionItem.placeholder = "";
-        addJokerButton.disabled = true;
+        const joker = document.getElementById("add-joker-pack-suggestion")
+          .placeholder;
+        if (joker) addJokerPackByName(joker);
+      }
 
+      function addJokerPackByName(joker) {
         const jokerAsId = `joker-pack-${formatAsId(joker)}`;
-        const newElem = `
-          <div id="${jokerAsId}" class="btn-group mb-2 me-2">
-            <button class="btn btn-secondary joker-pack" type="button" disabled>
-              ${joker}
-            </button>
-            <button
-              class="btn btn-secondary"
-              type="button"
-              onclick="removeJokerPack('${jokerAsId}')"
-            >
-              X
-            </button>
-          </div>
-        `;
-
-        const negativeInputGroup = document.getElementById(
-          "joker-pack-negative-input-group"
+        if (!joker || document.getElementById(jokerAsId)) return;
+        document.getElementById("joker-pack-selected").insertAdjacentHTML(
+          "beforeend",
+          gameCardHtml(joker, {
+            id: jokerAsId,
+            nameClass: "joker-pack",
+            kind: "joker-pack",
+            selected: true,
+            removable: true,
+          })
         );
-        negativeInputGroup.insertAdjacentHTML("beforebegin", newElem);
+        document.getElementById("add-joker-pack-suggestion").placeholder = "";
+        document.getElementById("add-joker-pack-button").disabled = true;
+        const q = document.querySelector(
+          "#add-joker-pack-toolbar input[type='search']"
+        ).value;
+        renderCardMatches("joker-pack", q, 16);
+        fillStage("joker-pack", joker);
       }
 
       function removeJokerPack(jokerAsId) {
         const jokerElem = document.getElementById(jokerAsId);
-        jokerElem.remove();
+        if (jokerElem) jokerElem.remove();
+        const q = document.querySelector(
+          "#add-joker-pack-toolbar input[type='search']"
+        ).value;
+        renderCardMatches("joker-pack", q, 16);
       }
 
       function findJokerPack(searchStr) {
@@ -776,42 +1848,72 @@
           jokerSuggestionItem.placeholder = "";
           addJokerButton.disabled = true;
         }
+        renderCardMatches("joker-pack", searchStr, 16);
       }
 
       function addJokerShop() {
-        const jokerSuggestionItem = document.getElementById(
-          "add-joker-shop-suggestion"
-        );
-        const addJokerButton = document.getElementById("add-joker-shop-button");
-        const joker = jokerSuggestionItem.placeholder;
-        jokerSuggestionItem.placeholder = "";
-        addJokerButton.disabled = true;
+        const joker = document.getElementById("add-joker-shop-suggestion")
+          .placeholder;
+        if (joker) addJokerShopByName(joker);
+      }
 
+      function addJokerShopByName(joker) {
         const jokerAsId = `joker-shop-${formatAsId(joker)}`;
-        const newElem = `
-          <div id="${jokerAsId}" class="btn-group mb-2 me-2">
-            <button class="btn btn-secondary joker-shop" type="button" disabled>
-              ${joker}
-            </button>
-            <button
-              class="btn btn-secondary"
-              type="button"
-              onclick="removeJokerShop('${jokerAsId}')"
-            >
-              X
-            </button>
-          </div>
-        `;
-
-        const anteInputGroup = document.getElementById(
-          "joker-shop-ante-input-group"
+        if (!joker || document.getElementById(jokerAsId)) return;
+        document.getElementById("joker-shop-selected").insertAdjacentHTML(
+          "beforeend",
+          gameCardHtml(joker, {
+            id: jokerAsId,
+            nameClass: "joker-shop",
+            kind: "joker-shop",
+            selected: true,
+            removable: true,
+            orderable: true,
+          })
         );
-        anteInputGroup.insertAdjacentHTML("beforebegin", newElem);
+        document.getElementById("add-joker-shop-suggestion").placeholder = "";
+        document.getElementById("add-joker-shop-button").disabled = true;
+        const q = document.querySelector(
+          "#add-joker-shop-toolbar input[type='search']"
+        ).value;
+        renderCardMatches("joker-shop", q, 16);
+        fillStage("joker-shop", joker);
+        refreshShopOrderBadges();
       }
 
       function removeJokerShop(jokerAsId) {
         const jokerElem = document.getElementById(jokerAsId);
-        jokerElem.remove();
+        if (jokerElem) jokerElem.remove();
+        const q = document.querySelector(
+          "#add-joker-shop-toolbar input[type='search']"
+        ).value;
+        renderCardMatches("joker-shop", q, 16);
+        refreshShopOrderBadges();
+      }
+
+      function moveShopJoker(card, dir) {
+        const rail = document.getElementById("joker-shop-selected");
+        if (!rail || !card) return;
+        if (dir < 0 && card.previousElementSibling) {
+          rail.insertBefore(card, card.previousElementSibling);
+        } else if (dir > 0 && card.nextElementSibling) {
+          rail.insertBefore(card.nextElementSibling, card);
+        }
+        refreshShopOrderBadges();
+      }
+
+      function refreshShopOrderBadges() {
+        const cards = [
+          ...document.querySelectorAll("#joker-shop-selected .game-card"),
+        ];
+        cards.forEach((card, i) => {
+          const num = card.querySelector(".order-num");
+          if (num) num.textContent = String(i + 1);
+          const prev = card.querySelector('.order-btn[data-dir="-1"]');
+          const next = card.querySelector('.order-btn[data-dir="1"]');
+          if (prev) prev.disabled = i === 0;
+          if (next) next.disabled = i === cards.length - 1;
+        });
       }
 
       function findJokerShop(searchStr) {
@@ -834,6 +1936,7 @@
           jokerSuggestionItem.placeholder = "";
           addJokerButton.disabled = true;
         }
+        renderCardMatches("joker-shop", searchStr, 16);
       }
 
       function validateInputUint(e) {
@@ -917,7 +2020,6 @@
 
       function search(e) {
         e.remove();
-        removeSearchResultArea();
 
         let errorStr = "";
 
@@ -1017,6 +2119,8 @@
           return;
         }
 
+        clearResultsPane(true);
+
         const jaml = buildJaml({
           jokersPack,
           jokerPackNegative,
@@ -1030,25 +2134,29 @@
           jokerShopAnte,
         });
 
-        runTaskWithWorkers(jaml, {
-          legendaries: legendaries.map((label) => ({
-            label,
-            id: toMotelyId(label),
-          })),
-          vouchers: vouchers.map((label) => ({
-            label,
-            id: toMotelyId(label),
-          })),
-          jokersPack: jokersPack.map((label) => ({
-            label,
-            id: toMotelyId(label),
-          })),
-          jokersShop: jokersShop.map((label) => ({
-            label,
-            id: toMotelyId(label),
-          })),
-          ankh: jokerPackAnkh,
-        })
+        runTaskWithWorkers(
+          jaml,
+          {
+            legendaries: legendaries.map((label) => ({
+              label,
+              id: toMotelyId(label),
+            })),
+            vouchers: vouchers.map((label) => ({
+              label,
+              id: toMotelyId(label),
+            })),
+            jokersPack: jokersPack.map((label) => ({
+              label,
+              id: toMotelyId(label),
+            })),
+            jokersShop: jokersShop.map((label) => ({
+              label,
+              id: toMotelyId(label),
+            })),
+            ankh: jokerPackAnkh,
+          },
+          { onFound: addFoundHit, maxResults: 32 }
+        )
           .then((taskResult) => {
             if (taskResult.error) {
               const modalBody = document.getElementById(
@@ -1062,7 +2170,7 @@
               searchCleanup();
               return;
             }
-            setupSearchResultArea(taskResult);
+            if (!foundHits.length) renderSeedList();
             searchCleanup();
           })
           .catch((err) => {
@@ -1088,7 +2196,12 @@
         removeCancelButton();
         clearInterval(updateStatusIntevalId);
         updateStatusIntevalId = null;
-        removeSearchStatusBar();
+        if (foundHits.length) {
+          const last = foundHits[foundHits.length - 1];
+          insertIntoSearchStatusBar(last.tries, last.time);
+        } else {
+          removeSearchStatusBar();
+        }
         setupSearchButton();
       }
 
