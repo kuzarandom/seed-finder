@@ -83,6 +83,11 @@ async function runSearch(jaml, startBatch, stride, targets) {
         }
         if (wantShopOrder && !shopOrderOk(locations, targets)) continue;
         if (!legendariesOk(locations, targets)) continue;
+        if (!shopTargetsOk(locations, targets)) continue;
+        if (!packTargetsOk(locations, targets)) continue;
+        if (!namedTargetsOk(locations, "arcana", targets)) continue;
+        if (!namedTargetsOk(locations, "spectral", targets)) continue;
+        if (!namedTargetsOk(locations, "blinds", targets)) continue;
         posted.add(seed);
         port.postMessage({
           type: "found",
@@ -112,6 +117,23 @@ function itemName(item) {
 function editionName(item) {
   const name = engine.MotelyItemEdition[item.edition];
   return name && name !== "None" ? name : "";
+}
+
+function stickerNames(item) {
+  const out = [];
+  if (item.isEternal) out.push("Eternal");
+  if (item.isPerishable) out.push("Perishable");
+  if (item.isRental) out.push("Rental");
+  return out;
+}
+
+function shopModsOk(item, want) {
+  const stickers = want?.stickers || [];
+  if (stickers.includes("Eternal") && !item.isEternal) return false;
+  if (stickers.includes("Perishable") && !item.isPerishable) return false;
+  if (stickers.includes("Rental") && !item.isRental) return false;
+  if (want?.edition && editionName(item) !== want.edition) return false;
+  return true;
 }
 
 function displayAnte(ante) {
@@ -144,10 +166,86 @@ function shopOrderOk(locations, targets) {
   return true;
 }
 
+function shopTargetsOk(locations, targets) {
+  const wanted = targets?.jokersShop || [];
+  if (wanted.length === 0) return true;
+  return (locations?.jokersShop || []).length >= wanted.length;
+}
+
+function locModsOk(item, want) {
+  const stickers = want?.stickers || [];
+  const have = item?.stickers || [];
+  if (stickers.some((sticker) => !have.includes(sticker))) return false;
+  if (want?.edition && item.edition !== want.edition) return false;
+  return true;
+}
+
+function packTargetsOk(locations, targets) {
+  const wanted = targets?.jokersPack || [];
+  if (wanted.length === 0) return true;
+  const found = locations?.jokersPack || [];
+  const groups = new Map();
+  wanted.forEach((want) => {
+    const key = `${(want.stickers || []).slice().sort().join(",")}|${
+      want.edition || ""
+    }`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(want);
+  });
+  return [...groups.values()].every((group) =>
+    group.some((want) =>
+      found.some((item) => item.label === want.label && locModsOk(item, want))
+    )
+  );
+}
+
+function namedTargetsOk(locations, key, targets) {
+  const wanted = targets?.[key] || [];
+  if (wanted.length === 0) return true;
+  return (locations?.[key] || []).length >= wanted.length;
+}
+
+function firstConsumableMatch(analysis, wantId) {
+  for (const ante of analysis.antes) {
+    for (let packIdx = 0; packIdx < ante.packs.length; packIdx++) {
+      const pk = ante.packs[packIdx];
+      for (let slot = 0; slot < pk.items.length; slot++) {
+        if (itemName(pk.items[slot]) !== wantId) continue;
+        return {
+          ante: displayAnte(ante),
+          pack: packIdx + 1,
+          slot: slot + 1,
+          packType: engine.MotelyBoosterPack[pk.pack] || "Pack",
+        };
+      }
+    }
+    for (let slot = 0; slot < ante.shopItems.length; slot++) {
+      if (itemName(ante.shopItems[slot]) !== wantId) continue;
+      return {
+        ante: displayAnte(ante),
+        slot: slot + 1,
+      };
+    }
+  }
+  return null;
+}
+
 function locateTargets(seed, targets) {
+  const stake = [
+    "White",
+    "Red",
+    "Green",
+    "Black",
+    "Blue",
+    "Purple",
+    "Orange",
+    "Gold",
+  ].includes(targets?.stake)
+    ? targets.stake
+    : "White";
   const analyzeCfg = engine.MotelyJaml.fromJaml(`name: analyze
 deck: Red
-stake: White
+stake: ${stake}
 seeds: [${seed}]
 should:
   - joker: Joker
@@ -159,6 +257,9 @@ should:
   const jokersPack = [];
   const jokersShop = [];
   const ankh = [];
+  const arcana = [];
+  const spectral = [];
+  const blinds = [];
 
   const souls = [];
   for (const ante of analysis.antes) {
@@ -203,18 +304,15 @@ should:
     }
   });
 
-  const wantedPack = new Map(
-    (targets.jokersPack || []).map((want) => [want.id, want])
-  );
-  if (wantedPack.size > 0) {
+  (targets.jokersPack || []).forEach((want) => {
     outerPack: for (const ante of analysis.antes) {
       for (let packIdx = 0; packIdx < ante.packs.length; packIdx++) {
         const pk = ante.packs[packIdx];
         const packType = engine.MotelyBoosterPack[pk.pack] || "Pack";
         for (let slot = 0; slot < pk.items.length; slot++) {
           const it = pk.items[slot];
-          const want = wantedPack.get(itemName(it));
-          if (!want) continue;
+          if (itemName(it) !== want.id) continue;
+          if (!shopModsOk(it, want)) continue;
           jokersPack.push({
             label: want.label,
             ante: displayAnte(ante),
@@ -222,23 +320,26 @@ should:
             slot: slot + 1,
             packType,
             edition: editionName(it),
+            stickers: stickerNames(it),
           });
           break outerPack;
         }
       }
     }
-  }
+  });
 
   (targets.jokersShop || []).forEach((want) => {
     outerShop: for (const ante of analysis.antes) {
       for (let slot = 0; slot < ante.shopItems.length; slot++) {
         const it = ante.shopItems[slot];
         if (itemName(it) !== want.id) continue;
+        if (!shopModsOk(it, want)) continue;
         jokersShop.push({
           label: want.label,
           ante: displayAnte(ante),
           slot: slot + 1,
           edition: editionName(it),
+          stickers: stickerNames(it),
         });
         break outerShop;
       }
@@ -264,5 +365,26 @@ should:
     }
   }
 
-  return { legendaries, vouchers, jokersPack, jokersShop, ankh };
+  (targets.arcana || []).forEach((want) => {
+    const hit = firstConsumableMatch(analysis, want.id);
+    if (hit) arcana.push({ label: want.label, ...hit });
+  });
+
+  (targets.spectral || []).forEach((want) => {
+    const hit = firstConsumableMatch(analysis, want.id);
+    if (hit) spectral.push({ label: want.label, ...hit });
+  });
+
+  (targets.blinds || []).forEach((want) => {
+    for (const ante of analysis.antes) {
+      if (engine.MotelyBossBlind[ante.boss] !== want.id) continue;
+      blinds.push({
+        label: want.label,
+        ante: displayAnte(ante),
+      });
+      break;
+    }
+  });
+
+  return { legendaries, vouchers, jokersPack, jokersShop, ankh, arcana, spectral, blinds };
 }

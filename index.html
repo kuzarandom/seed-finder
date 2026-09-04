@@ -487,6 +487,12 @@
       .rarity-uncommon.stage-art { border-color: rgba(90, 196, 130, 0.45); }
       .rarity-voucher .card-art,
       .rarity-voucher.stage-art { border-color: rgba(120, 180, 255, 0.4); }
+      .rarity-arcana .card-art,
+      .rarity-arcana.stage-art { border-color: rgba(168, 120, 255, 0.5); }
+      .rarity-spectral .card-art,
+      .rarity-spectral.stage-art { border-color: rgba(90, 210, 220, 0.5); }
+      .rarity-blind .card-art,
+      .rarity-blind.stage-art { border-color: rgba(226, 90, 70, 0.55); }
 
       .card-art.no-art,
       .stage-art.no-art,
@@ -540,7 +546,79 @@
       }
 
       .selected-rail.ordered-rail .game-card {
-        width: 68px;
+        width: 78px;
+      }
+
+      .selected-rail.ordered-rail {
+        max-height: 210px;
+      }
+
+      .card-mods {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 3px;
+        margin-top: 4px;
+      }
+
+      .mod-chip {
+        padding: 1px 5px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #1a1218;
+        color: var(--muted);
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        line-height: 1.3;
+      }
+
+      .mod-chip.is-on {
+        color: #2a1608;
+        border-color: transparent;
+      }
+
+      .mod-chip[data-mod="Eternal"].is-on {
+        background: #e24b4b;
+        color: #fff;
+      }
+
+      .mod-chip[data-mod="Perishable"].is-on {
+        background: #5ac482;
+        color: #102016;
+      }
+
+      .mod-chip[data-mod="Rental"].is-on {
+        background: #e8c478;
+      }
+
+      .mod-chip[data-edition="Foil"].is-on {
+        background: #c9d4e8;
+        color: #1a2433;
+      }
+
+      .mod-chip[data-edition="Holographic"].is-on {
+        background: #6cb4ff;
+        color: #0b1c2e;
+      }
+
+      .mod-chip[data-edition="Polychrome"].is-on {
+        background: linear-gradient(90deg, #e07ad3, #e8c478, #6cb4ff);
+        color: #1a1016;
+      }
+
+      .mod-chip[data-edition="Negative"].is-on {
+        background: #1a1a22;
+        color: #f2f2f8;
+        box-shadow: inset 0 0 0 1px #c8c8e0;
+      }
+
+      .selected-rail.mod-rail {
+        max-height: 210px;
+      }
+
+      .selected-rail.mod-rail .game-card {
+        width: 78px;
       }
 
       .card-order {
@@ -931,7 +1009,7 @@
           <div class="panel-head">
             <div>
               <h2>First buffoon pack</h2>
-              <p class="hint">Any of these in the opening pack</p>
+              <p class="hint">Up to 2 jokers in the opening pack</p>
             </div>
             <div id="add-joker-pack-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
@@ -958,17 +1036,6 @@
                   +
                 </button>
               </div>
-              <label
-                id="joker-pack-negative-input-group"
-                class="check-pill"
-              >
-                Negative
-                <input
-                  type="checkbox"
-                  id="joker-pack-negative"
-                  class="form-check-input mt-0"
-                />
-              </label>
               <label id="joker-pack-ankh-input-group" class="check-pill">
                 Ankh next pack
                 <input
@@ -980,8 +1047,9 @@
             </div>
           </div>
           <div id="joker-pack-gallery" class="card-rail"></div>
-          <p class="preview-label">Selected</p>
-          <div id="joker-pack-selected" class="card-rail selected-rail"></div>
+          <p class="preview-label">Selected · tap E/P/R and Foil/Holo/Poly/Neg</p>
+          <div id="joker-pack-selected" class="card-rail selected-rail mod-rail"></div>
+          <p id="joker-pack-stake-hint" class="hint" hidden></p>
         </section>
 
         <section class="panel">
@@ -1028,8 +1096,153 @@
             </div>
           </div>
           <div id="joker-shop-gallery" class="card-rail"></div>
-          <p class="preview-label">Wanted first → last</p>
-          <div id="joker-shop-selected" class="card-rail selected-rail ordered-rail"></div>
+          <p class="preview-label">Wanted first → last · E/P/R stickers · Foil/Holo/Poly/Neg</p>
+          <div id="joker-shop-selected" class="card-rail selected-rail ordered-rail mod-rail"></div>
+          <p id="joker-shop-stake-hint" class="hint" hidden></p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Arcana</h2>
+              <p class="hint">Tarot cards to find by this ante</p>
+            </div>
+            <div id="add-arcana-toolbar" class="toolbar btn-toolbar">
+              <div class="input-group" style="min-width: 180px; flex: 1">
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search tarot..."
+                  oninput="findSelectable('arcana', this.value)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addSelectable('arcana');}"
+                />
+                <input
+                  type="text"
+                  id="add-arcana-suggestion"
+                  class="form-control d-none"
+                  disabled
+                />
+                <button
+                  id="add-arcana-button"
+                  class="btn btn-add d-none"
+                  type="button"
+                  onclick="addSelectable('arcana')"
+                  disabled
+                >
+                  +
+                </button>
+              </div>
+              <div id="arcana-ante-input-group" class="input-group" style="max-width: 140px">
+                <div class="input-group-text">Max ante</div>
+                <input
+                  type="number"
+                  id="arcana-ante"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="arcana-gallery" class="card-rail"></div>
+          <p class="preview-label">Selected</p>
+          <div id="arcana-selected" class="card-rail selected-rail"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Spectral</h2>
+              <p class="hint">Spectral cards to find by this ante</p>
+            </div>
+            <div id="add-spectral-toolbar" class="toolbar btn-toolbar">
+              <div class="input-group" style="min-width: 180px; flex: 1">
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search spectral..."
+                  oninput="findSelectable('spectral', this.value)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addSelectable('spectral');}"
+                />
+                <input
+                  type="text"
+                  id="add-spectral-suggestion"
+                  class="form-control d-none"
+                  disabled
+                />
+                <button
+                  id="add-spectral-button"
+                  class="btn btn-add d-none"
+                  type="button"
+                  onclick="addSelectable('spectral')"
+                  disabled
+                >
+                  +
+                </button>
+              </div>
+              <div id="spectral-ante-input-group" class="input-group" style="max-width: 140px">
+                <div class="input-group-text">Max ante</div>
+                <input
+                  type="number"
+                  id="spectral-ante"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="spectral-gallery" class="card-rail"></div>
+          <p class="preview-label">Selected</p>
+          <div id="spectral-selected" class="card-rail selected-rail"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Blinds</h2>
+              <p class="hint">Boss blinds to find by this ante</p>
+            </div>
+            <div id="add-blind-toolbar" class="toolbar btn-toolbar">
+              <div class="input-group" style="min-width: 180px; flex: 1">
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search blinds..."
+                  oninput="findSelectable('blind', this.value)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addSelectable('blind');}"
+                />
+                <input
+                  type="text"
+                  id="add-blind-suggestion"
+                  class="form-control d-none"
+                  disabled
+                />
+                <button
+                  id="add-blind-button"
+                  class="btn btn-add d-none"
+                  type="button"
+                  onclick="addSelectable('blind')"
+                  disabled
+                >
+                  +
+                </button>
+              </div>
+              <div id="blind-ante-input-group" class="input-group" style="max-width: 140px">
+                <div class="input-group-text">Max ante</div>
+                <input
+                  type="number"
+                  id="blind-ante"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="blind-gallery" class="card-rail"></div>
+          <p class="preview-label">Selected</p>
+          <div id="blind-selected" class="card-rail selected-rail"></div>
         </section>
       </div>
 
@@ -1282,6 +1495,137 @@
         "Constellation",
       ];
 
+      const arcanaCards = [
+        "The Fool",
+        "The Magician",
+        "The High Priestess",
+        "The Empress",
+        "The Emperor",
+        "The Hierophant",
+        "The Lovers",
+        "The Chariot",
+        "Justice",
+        "The Hermit",
+        "The Wheel of Fortune",
+        "Strength",
+        "The Hanged Man",
+        "Death",
+        "Temperance",
+        "The Devil",
+        "The Tower",
+        "The Star",
+        "The Moon",
+        "The Sun",
+        "Judgement",
+        "The World",
+      ];
+
+      const spectralCards = [
+        "Familiar",
+        "Grim",
+        "Incantation",
+        "Talisman",
+        "Aura",
+        "Wraith",
+        "Sigil",
+        "Ouija",
+        "Ectoplasm",
+        "Immolate",
+        "Ankh",
+        "Deja Vu",
+        "Hex",
+        "Trance",
+        "Medium",
+        "Cryptid",
+        "The Soul",
+        "Black Hole",
+      ];
+
+      const blinds = [
+        "The Club",
+        "The Goad",
+        "The Head",
+        "The Hook",
+        "The Manacle",
+        "The Pillar",
+        "The Psychic",
+        "The Window",
+        "The Arm",
+        "The Fish",
+        "The Flint",
+        "The House",
+        "The Mark",
+        "The Mouth",
+        "The Needle",
+        "The Wall",
+        "The Water",
+        "The Wheel",
+        "The Eye",
+        "The Tooth",
+        "The Plant",
+        "The Serpent",
+        "The Ox",
+        "Amber Acorn",
+        "Cerulean Bell",
+        "Crimson Heart",
+        "Verdant Leaf",
+        "Violet Vessel",
+      ];
+
+      const showdownBlinds = new Set([
+        "Amber Acorn",
+        "Cerulean Bell",
+        "Crimson Heart",
+        "Verdant Leaf",
+        "Violet Vessel",
+      ]);
+
+      const pickerCfg = {
+        arcana: {
+          list: arcanaCards,
+          gallery: "arcana-gallery",
+          selected: "arcana-selected",
+          toolbar: "add-arcana-toolbar",
+          suggestionId: "add-arcana-suggestion",
+          buttonId: "add-arcana-button",
+          anteId: "arcana-ante",
+          idPrefix: "arcana-",
+          nameClass: "arcana",
+          kind: "arcana",
+          limit: 32,
+        },
+        spectral: {
+          list: spectralCards,
+          gallery: "spectral-gallery",
+          selected: "spectral-selected",
+          toolbar: "add-spectral-toolbar",
+          suggestionId: "add-spectral-suggestion",
+          buttonId: "add-spectral-button",
+          anteId: "spectral-ante",
+          idPrefix: "spectral-",
+          nameClass: "spectral",
+          kind: "spectral",
+          limit: 32,
+        },
+        blind: {
+          list: blinds,
+          gallery: "blind-gallery",
+          selected: "blind-selected",
+          toolbar: "add-blind-toolbar",
+          suggestionId: "add-blind-suggestion",
+          buttonId: "add-blind-button",
+          anteId: "blind-ante",
+          idPrefix: "blind-",
+          nameClass: "blind",
+          kind: "blind",
+          limit: 32,
+        },
+      };
+
+      const arcanaSet = new Set(arcanaCards);
+      const spectralSet = new Set(spectralCards);
+      const blindSet = new Set(blinds);
+
       let cardAbilities = {};
       let abilityByFold = {};
 
@@ -1294,6 +1638,9 @@
         renderCardMatches("voucher", "", 32);
         renderCardMatches("joker-pack", "", 16);
         renderCardMatches("joker-shop", "", 16);
+        renderCardMatches("arcana", "", 32);
+        renderCardMatches("spectral", "", 32);
+        renderCardMatches("blind", "", 32);
         bindCardPreview();
         setupSearchButton();
       })();
@@ -1318,17 +1665,60 @@
         return cardAbilities[name] || abilityByFold[foldName(name)] || "";
       }
 
+      const artFileAliases = {
+        "Riff-raff": "Riff-Raff",
+        "Seance": "Séance",
+        "Mail In Rebate": "Mail-In Rebate",
+        "Drivers License": "Driver's License",
+      };
+
+      function artFileName(name) {
+        const mapped = artFileAliases[name] || name;
+        const slug = mapped.replaceAll(" ", "_");
+        if (arcanaSet.has(name)) return `Tarot_${slug}.png`;
+        if (spectralSet.has(name)) return `Spectral_${slug}.png`;
+        return `${slug}.png`;
+      }
+
       function cardArtUrl(name) {
         return (
-          "https://balatrowiki.org/w/Special:FilePath/" +
-          encodeURIComponent(name.replaceAll(" ", "_")) +
-          ".png"
+          "https://balatrogame.fandom.com/wiki/Special:FilePath/" +
+          encodeURIComponent(artFileName(name))
         );
+      }
+
+      function cardArtImg(name, opts) {
+        const url = cardArtUrl(name);
+        const alt = opts && "alt" in opts ? opts.alt : name;
+        const lazy = opts && opts.lazy;
+        return `<img src="${url}" alt="${escapeAttr(alt)}"${
+          lazy ? ' loading="lazy"' : ""
+        } decoding="async" referrerpolicy="no-referrer" data-art-src="${escapeAttr(
+          url
+        )}" onerror="onCardArtError(this)">`;
+      }
+
+      function onCardArtError(img) {
+        const tries = Number(img.dataset.artTry || 0);
+        if (tries >= 2) {
+          img.parentElement.classList.add("no-art");
+          img.remove();
+          return;
+        }
+        img.dataset.artTry = String(tries + 1);
+        const next = img.dataset.artSrc || img.getAttribute("src");
+        img.removeAttribute("src");
+        setTimeout(() => {
+          img.src = next;
+        }, 200 * (tries + 1));
       }
 
       function rarityOf(name) {
         if (legendarySet.has(name)) return "legendary";
         if (voucherSet.has(name)) return "voucher";
+        if (arcanaSet.has(name)) return "arcana";
+        if (spectralSet.has(name)) return "spectral";
+        if (blindSet.has(name)) return "blind";
         if (rareSet.has(name)) return "rare";
         if (uncommonSet.has(name)) return "uncommon";
         return "common";
@@ -1357,6 +1747,17 @@
         const removable = opts.removable
           ? `<button type="button" class="card-remove" aria-label="Remove ${escapeAttr(name)}">×</button>`
           : "";
+        const mods = (opts.mods || opts.orderable)
+            ? `<div class="card-mods">
+              <button type="button" class="mod-chip" data-mod="Eternal" title="Eternal">E</button>
+              <button type="button" class="mod-chip" data-mod="Perishable" title="Perishable">P</button>
+              <button type="button" class="mod-chip" data-mod="Rental" title="Rental">R</button>
+              <button type="button" class="mod-chip" data-edition="Foil" title="Foil">Foil</button>
+              <button type="button" class="mod-chip" data-edition="Holographic" title="Holographic">Holo</button>
+              <button type="button" class="mod-chip" data-edition="Polychrome" title="Polychrome">Poly</button>
+              <button type="button" class="mod-chip" data-edition="Negative" title="Negative">Neg</button>
+            </div>`
+          : "";
         const orderable = opts.orderable
           ? `<div class="card-order">
               <button type="button" class="order-btn" data-dir="-1" aria-label="Move earlier">‹</button>
@@ -1368,10 +1769,11 @@
           <div ${id ? `id="${id}"` : ""} class="game-card rarity-${rarity}${selected}" data-name="${escapeAttr(name)}" data-kind="${kind}" role="button" tabindex="0"${effect ? ` title="${escapeAttr(effect)}"` : ""}>
             ${removable}
             <span class="card-art">
-              <img src="${cardArtUrl(name)}" alt="${escapeAttr(name)}" onerror="this.parentElement.classList.add('no-art'); this.remove();">
+              ${cardArtImg(name, { lazy: true })}
             </span>
             <span class="${nameClass} card-name">${escapeHtml(name)}</span>
             ${orderable}
+            ${mods}
           </div>
         `;
       }
@@ -1389,7 +1791,7 @@
         const effect = abilityOf(name);
         stage.innerHTML = `
           <div class="stage-art rarity-${rarity}">
-            <img src="${cardArtUrl(name)}" alt="${escapeAttr(name)}" onerror="this.parentElement.classList.add('no-art'); this.remove();">
+            ${cardArtImg(name)}
           </div>
           <div class="stage-copy">
             <strong class="stage-name">${escapeHtml(name)}</strong>
@@ -1416,6 +1818,19 @@
             return;
           }
 
+          const modChip = e.target.closest(".mod-chip");
+          if (modChip) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleCardMod(modChip);
+            return;
+          }
+
+          if (e.target.closest(".card-mods")) {
+            e.stopPropagation();
+            return;
+          }
+
           const removeBtn = e.target.closest(".card-remove");
           if (removeBtn) {
             e.preventDefault();
@@ -1425,6 +1840,9 @@
             if (card.dataset.kind === "voucher") removeVoucher(card.id);
             else if (card.dataset.kind === "joker-pack") removeJokerPack(card.id);
             else if (card.dataset.kind === "joker-shop") removeJokerShop(card.id);
+            else if (pickerCfg[card.dataset.kind]) {
+              removeSelectable(card.dataset.kind, card.id);
+            }
             return;
           }
 
@@ -1445,12 +1863,19 @@
             !card.closest("#joker-shop-selected")
           ) {
             addJokerShopByName(name);
+          } else if (
+            pickerCfg[kind] &&
+            !card.closest(`#${pickerCfg[kind].selected}`)
+          ) {
+            addSelectableByName(kind, name);
           }
         });
 
         document.addEventListener("keydown", (e) => {
           if (e.key !== "Enter" && e.key !== " ") return;
-          if (e.target.closest(".card-remove, .order-btn")) return;
+          if (e.target.closest(".card-remove, .order-btn, .mod-chip")) {
+            return;
+          }
           const card = e.target.closest(".game-card[data-kind]");
           if (!card) return;
           e.preventDefault();
@@ -1520,6 +1945,24 @@
             idPrefix: "joker-shop-",
             featured: featuredJokers,
           },
+          arcana: {
+            list: arcanaCards,
+            gallery: "arcana-gallery",
+            idPrefix: "arcana-",
+            featured: arcanaCards,
+          },
+          spectral: {
+            list: spectralCards,
+            gallery: "spectral-gallery",
+            idPrefix: "spectral-",
+            featured: spectralCards,
+          },
+          blind: {
+            list: blinds,
+            gallery: "blind-gallery",
+            idPrefix: "blind-",
+            featured: blinds,
+          },
         };
         const cfg = map[kind];
         const gallery = document.getElementById(cfg.gallery);
@@ -1532,6 +1975,12 @@
           const id = (cfg.idPrefix || "") + formatAsId(name);
           return !document.getElementById(id);
         });
+        if (kind === "joker-pack" && packJokerCount() >= 2) {
+          gallery.innerHTML =
+            `<p class="empty-matches">Buffoon pack holds 2 cards</p>`;
+          syncSelectedLabel(kind);
+          return;
+        }
         gallery.innerHTML = matches.length
           ? matches
               .map((name) => gameCardHtml(name, { kind }))
@@ -1545,6 +1994,9 @@
           voucher: "voucher-selected",
           "joker-pack": "joker-pack-selected",
           "joker-shop": "joker-shop-selected",
+          arcana: "arcana-selected",
+          spectral: "spectral-selected",
+          blind: "blind-selected",
         }[kind];
         if (!selectedId) return;
         const rail = document.getElementById(selectedId);
@@ -1618,7 +2070,7 @@
       function resultItemHtml(name, metaHtml, rank) {
         return `<div class="result-item">
           <span class="result-thumb rarity-${rarityOf(name)}">
-            <img src="${cardArtUrl(name)}" alt="" onerror="this.parentElement.classList.add('no-art'); this.remove();">
+            ${cardArtImg(name, { alt: "", lazy: true })}
           </span>
           <div>
             <strong>${rank ? `${rank}. ` : ""}${name}</strong>
@@ -1638,6 +2090,9 @@
         }
         if (item.slot) bits.push(`slot ${item.slot}`);
         if (item.edition) bits.push(item.edition);
+        if (item.stickers && item.stickers.length) {
+          bits.push(item.stickers.join(", "));
+        }
         return resultItemHtml(
           item.label,
           locLine(`${bits.join(", ")}${extra || ""}`),
@@ -1684,6 +2139,16 @@
           (locs.jokersShop || [])
             .map((item, i) => formatLoc(item, "", i + 1))
             .join("") || "—";
+        const arcanaHtml =
+          (locs.arcana || []).map((item) => formatLoc(item)).join("") || "—";
+        const spectralHtml =
+          (locs.spectral || []).map((item) => formatLoc(item)).join("") || "—";
+        const blindHtml =
+          (locs.blinds || [])
+            .map((item) =>
+              resultItemHtml(item.label, locLine(`Ante ${item.ante}`))
+            )
+            .join("") || "—";
         return `
           <div class="result-card">
             <div class="seed-block">
@@ -1720,6 +2185,18 @@
             <div class="result-row">
               <dt>Shop (in order)</dt>
               <dd>${shopHtml}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Arcana</dt>
+              <dd>${arcanaHtml}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Spectral</dt>
+              <dd>${spectralHtml}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Blinds</dt>
+              <dd>${blindHtml}</dd>
             </div>
           </div>
         `;
@@ -1840,6 +2317,93 @@
         renderCardMatches("voucher", q, 32);
       }
 
+      function collectSelectedNames(railId) {
+        return [...document.querySelectorAll(`${railId} .game-card`)].map(
+          (card) => card.dataset.name
+        );
+      }
+
+      function addSelectable(kind) {
+        const cfg = pickerCfg[kind];
+        if (!cfg) return;
+        const name = document.getElementById(cfg.suggestionId).placeholder;
+        if (name) addSelectableByName(kind, name);
+      }
+
+      function addSelectableByName(kind, name) {
+        const cfg = pickerCfg[kind];
+        if (!cfg || !name) return;
+        const id = cfg.idPrefix + formatAsId(name);
+        if (document.getElementById(id)) return;
+        document.getElementById(cfg.selected).insertAdjacentHTML(
+          "beforeend",
+          gameCardHtml(name, {
+            id,
+            nameClass: cfg.nameClass,
+            kind: cfg.kind,
+            selected: true,
+            removable: true,
+          })
+        );
+        document.getElementById(cfg.suggestionId).placeholder = "";
+        document.getElementById(cfg.buttonId).disabled = true;
+        const q = document.querySelector(
+          `#${cfg.toolbar} input[type='search']`
+        ).value;
+        const ante = document.getElementById(cfg.anteId);
+        if (ante && Number(ante.value) === 0) ante.value = 8;
+        renderCardMatches(kind, q, cfg.limit);
+        fillStage(kind, name);
+      }
+
+      function removeSelectable(kind, id) {
+        const cfg = pickerCfg[kind];
+        if (!cfg) return;
+        const elem = document.getElementById(id);
+        if (elem) elem.remove();
+        const q = document.querySelector(
+          `#${cfg.toolbar} input[type='search']`
+        ).value;
+        renderCardMatches(kind, q, cfg.limit);
+      }
+
+      function findSelectable(kind, searchStr) {
+        const cfg = pickerCfg[kind];
+        if (!cfg) return;
+        const res =
+          searchStr.length > 0
+            ? cfg.list.find(
+                (name) =>
+                  name.toLowerCase().startsWith(searchStr.toLowerCase()) &&
+                  !document.getElementById(cfg.idPrefix + formatAsId(name))
+              )
+            : null;
+        const suggestion = document.getElementById(cfg.suggestionId);
+        const button = document.getElementById(cfg.buttonId);
+        if (res) {
+          suggestion.placeholder = res;
+          button.disabled = false;
+        } else {
+          suggestion.placeholder = "";
+          button.disabled = true;
+        }
+        renderCardMatches(kind, searchStr, cfg.limit);
+      }
+
+      function readSelectableFilter(kind, label, minAnte) {
+        const cfg = pickerCfg[kind];
+        const names = collectSelectedNames(`#${cfg.selected}`);
+        if (names.length === 0) {
+          return { names, ante: 0, error: "" };
+        }
+        const ante = Number(document.getElementById(cfg.anteId).value);
+        let error = "";
+        if (ante < minAnte) {
+          error = `- ${label}: max ante should be minimum ${minAnte}<br />`;
+        }
+        return { names, ante, error };
+      }
+
       function findVoucher(searchStr) {
         const res =
           searchStr.length > 0
@@ -1863,6 +2427,12 @@
         renderCardMatches("voucher", searchStr, 32);
       }
 
+      function packJokerCount() {
+        return document.querySelectorAll(
+          "#joker-pack-selected .game-card"
+        ).length;
+      }
+
       function addJokerPack() {
         const joker = document.getElementById("add-joker-pack-suggestion")
           .placeholder;
@@ -1871,7 +2441,9 @@
 
       function addJokerPackByName(joker) {
         const jokerAsId = `joker-pack-${formatAsId(joker)}`;
-        if (!joker || document.getElementById(jokerAsId)) return;
+        if (!joker || document.getElementById(jokerAsId) || packJokerCount() >= 2) {
+          return;
+        }
         document.getElementById("joker-pack-selected").insertAdjacentHTML(
           "beforeend",
           gameCardHtml(joker, {
@@ -1880,6 +2452,7 @@
             kind: "joker-pack",
             selected: true,
             removable: true,
+            mods: true,
           })
         );
         document.getElementById("add-joker-pack-suggestion").placeholder = "";
@@ -1889,6 +2462,7 @@
         ).value;
         renderCardMatches("joker-pack", q, 16);
         fillStage("joker-pack", joker);
+        refreshShopStakeHint();
       }
 
       function removeJokerPack(jokerAsId) {
@@ -1898,21 +2472,22 @@
           "#add-joker-pack-toolbar input[type='search']"
         ).value;
         renderCardMatches("joker-pack", q, 16);
+        refreshShopStakeHint();
       }
 
       function findJokerPack(searchStr) {
+        const jokerSuggestionItem = document.getElementById(
+          "add-joker-pack-suggestion"
+        );
+        const addJokerButton = document.getElementById("add-joker-pack-button");
         const res =
-          searchStr.length > 0
+          searchStr.length > 0 && packJokerCount() < 2
             ? nonLegendaryJokers.find(
                 (joker) =>
                   joker.toLowerCase().startsWith(searchStr.toLowerCase()) &&
                   !document.getElementById(`joker-pack-${formatAsId(joker)}`)
               )
             : null;
-        const jokerSuggestionItem = document.getElementById(
-          "add-joker-pack-suggestion"
-        );
-        const addJokerButton = document.getElementById("add-joker-pack-button");
         if (res) {
           jokerSuggestionItem.placeholder = res;
           addJokerButton.disabled = false;
@@ -1951,6 +2526,9 @@
         renderCardMatches("joker-shop", q, 16);
         fillStage("joker-shop", joker);
         refreshShopOrderBadges();
+        const ante = document.getElementById("joker-shop-ante");
+        if (ante && Number(ante.value) === 0) ante.value = 8;
+        refreshShopStakeHint();
       }
 
       function removeJokerShop(jokerAsId) {
@@ -1961,6 +2539,7 @@
         ).value;
         renderCardMatches("joker-shop", q, 16);
         refreshShopOrderBadges();
+        refreshShopStakeHint();
       }
 
       function moveShopJoker(card, dir) {
@@ -1985,6 +2564,94 @@
           const next = card.querySelector('.order-btn[data-dir="1"]');
           if (prev) prev.disabled = i === 0;
           if (next) next.disabled = i === cards.length - 1;
+        });
+      }
+
+      function shopStickersOf(card) {
+        return (card.dataset.stickers || "").split(",").filter(Boolean);
+      }
+
+      function toggleCardMod(btn) {
+        const card = btn.closest(".game-card");
+        if (!card) return;
+        if (btn.dataset.edition) {
+          const edition = btn.dataset.edition;
+          card.dataset.edition =
+            card.dataset.edition === edition ? "" : edition;
+          refreshCardModUi(card);
+          refreshShopStakeHint();
+          return;
+        }
+        const mod = btn.dataset.mod;
+        let stickers = shopStickersOf(card);
+        if (stickers.includes(mod)) {
+          stickers = stickers.filter((s) => s !== mod);
+        } else {
+          if (mod === "Eternal") {
+            stickers = stickers.filter((s) => s !== "Perishable");
+          }
+          if (mod === "Perishable") {
+            stickers = stickers.filter((s) => s !== "Eternal");
+          }
+          stickers.push(mod);
+        }
+        card.dataset.stickers = stickers.join(",");
+        refreshCardModUi(card);
+        refreshShopStakeHint();
+      }
+
+      function refreshCardModUi(card) {
+        const stickers = new Set(shopStickersOf(card));
+        const edition = card.dataset.edition || "";
+        card.querySelectorAll(".mod-chip").forEach((chip) => {
+          if (chip.dataset.edition) {
+            chip.classList.toggle("is-on", chip.dataset.edition === edition);
+          } else {
+            chip.classList.toggle("is-on", stickers.has(chip.dataset.mod));
+          }
+        });
+      }
+
+      function collectSelectedJokers(railId) {
+        return [...document.querySelectorAll(`${railId} .game-card`)].map(
+          (card) => ({
+            label: card.dataset.name,
+            stickers: shopStickersOf(card),
+            edition: card.dataset.edition || "",
+          })
+        );
+      }
+
+      function collectShopJokers() {
+        return collectSelectedJokers("#joker-shop-selected");
+      }
+
+      function collectPackJokers() {
+        return collectSelectedJokers("#joker-pack-selected");
+      }
+
+      function stakeFromMods(...lists) {
+        const stickers = lists.flatMap((list) =>
+          (list || []).flatMap((j) => j.stickers || [])
+        );
+        if (stickers.includes("Rental")) return "Gold";
+        if (stickers.includes("Perishable")) return "Orange";
+        if (stickers.includes("Eternal")) return "Black";
+        return "White";
+      }
+
+      function refreshShopStakeHint() {
+        const stake = stakeFromMods(collectShopJokers(), collectPackJokers());
+        ["joker-shop-stake-hint", "joker-pack-stake-hint"].forEach((id) => {
+          const hint = document.getElementById(id);
+          if (!hint) return;
+          if (stake === "White") {
+            hint.hidden = true;
+            hint.textContent = "";
+            return;
+          }
+          hint.hidden = false;
+          hint.textContent = `Uses ${stake} Stake so stickers can appear`;
         });
       }
 
@@ -2043,7 +2710,7 @@
         const lines = [
           "name: TheEgg",
           "deck: Red",
-          "stake: White",
+          `stake: ${opts.stake || "White"}`,
           "must:",
         ];
 
@@ -2066,14 +2733,32 @@
         });
 
         if (opts.jokersPack.length > 0) {
-          const ids = opts.jokersPack.map(toMotelyId).join(", ");
-          lines.push(`  - joker: [${ids}]`);
-          lines.push("    antes: [1]");
-          lines.push("    sources:");
-          lines.push("      boosterPacks: [0]");
-          if (opts.jokerPackNegative) {
-            lines.push("    edition: Negative");
-          }
+          const packGroups = new Map();
+          opts.jokersPack.forEach((joker) => {
+            const label = typeof joker === "string" ? joker : joker.label;
+            const stickers = (joker && joker.stickers) || [];
+            const edition = (joker && joker.edition) || "";
+            const key = `${stickers.slice().sort().join(",")}|${edition}`;
+            if (!packGroups.has(key)) {
+              packGroups.set(key, { labels: [], stickers, edition });
+            }
+            packGroups.get(key).labels.push(label);
+          });
+          packGroups.forEach((group) => {
+            const ids = group.labels.map(toMotelyId);
+            lines.push(
+              `  - joker: ${ids.length === 1 ? ids[0] : `[${ids.join(", ")}]`}`
+            );
+            lines.push("    antes: [1]");
+            lines.push("    sources:");
+            lines.push("      boosterPacks: [0]");
+            if (group.stickers.length) {
+              lines.push(`    stickers: [${group.stickers.join(", ")}]`);
+            }
+            if (group.edition) {
+              lines.push(`    edition: ${group.edition}`);
+            }
+          });
         }
 
         if (opts.jokerPackAnkh) {
@@ -2084,10 +2769,33 @@
         }
 
         opts.jokersShop.forEach((joker) => {
-          lines.push(`  - joker: ${toMotelyId(joker)}`);
+          const name = typeof joker === "string" ? joker : joker.label;
+          lines.push(`  - joker: ${toMotelyId(name)}`);
           lines.push(`    antes: [${yamlAntes(opts.jokerShopAnte)}]`);
           lines.push("    sources:");
           lines.push("      shopItems: [0, 1, 2, 3, 4, 5, 6, 7]");
+          const stickers = (joker && joker.stickers) || [];
+          if (stickers.length) {
+            lines.push(`    stickers: [${stickers.join(", ")}]`);
+          }
+          if (joker && joker.edition) {
+            lines.push(`    edition: ${joker.edition}`);
+          }
+        });
+
+        (opts.arcana || []).forEach((card) => {
+          lines.push(`  - tarotCard: ${toMotelyId(card)}`);
+          lines.push(`    antes: [${yamlAntes(opts.arcanaAnte)}]`);
+        });
+
+        (opts.spectral || []).forEach((card) => {
+          lines.push(`  - spectralCard: ${toMotelyId(card)}`);
+          lines.push(`    antes: [${yamlAntes(opts.spectralAnte)}]`);
+        });
+
+        (opts.blinds || []).forEach((blind) => {
+          lines.push(`  - boss: ${toMotelyId(blind)}`);
+          lines.push(`    antes: [${yamlAntes(opts.blindAnte)}]`);
         });
 
         return lines.join("\n");
@@ -2140,28 +2848,15 @@
           }
         }
 
-        const jokerPackElems = document.getElementsByClassName("joker-pack");
-        const jokersPack = [];
-        for (let i = 0; i < jokerPackElems.length; i++) {
-          jokersPack.push(jokerPackElems.item(i).innerHTML.trim());
-        }
-        let jokerPackNegative;
+        const jokersPack = collectPackJokers();
         let jokerPackAnkh;
         if (jokersPack.length == 0) {
-          jokerPackNegative = false;
           jokerPackAnkh = false;
         } else {
-          jokerPackNegative = document.getElementById(
-            "joker-pack-negative"
-          ).checked;
           jokerPackAnkh = document.getElementById("joker-pack-ankh").checked;
         }
 
-        const jokerShopElems = document.getElementsByClassName("joker-shop");
-        const jokersShop = [];
-        for (let i = 0; i < jokerShopElems.length; i++) {
-          jokersShop.push(jokerShopElems.item(i).innerHTML.trim());
-        }
+        const jokersShop = collectShopJokers();
         let jokerShopAnte;
         if (jokersShop.length == 0) {
           jokerShopAnte = 0;
@@ -2169,16 +2864,35 @@
           jokerShopAnte = Number(
             document.getElementById("joker-shop-ante").value
           );
-          if (jokerShopAnte < 2) {
-            errorStr += `- Jokers in shop: max ante should be minimum 2nd <br />`;
+          if (jokerShopAnte == 0) {
+            errorStr += `- Jokers in shop: max ante should be minimum 1st <br />`;
           }
+        }
+
+        const searchStake = stakeFromMods(jokersShop, jokersPack);
+
+        const arcanaFilter = readSelectableFilter("arcana", "Arcana", 1);
+        const spectralFilter = readSelectableFilter("spectral", "Spectral", 1);
+        const blindFilter = readSelectableFilter("blind", "Blinds", 1);
+        errorStr += arcanaFilter.error;
+        errorStr += spectralFilter.error;
+        errorStr += blindFilter.error;
+        if (
+          blindFilter.names.some((name) => showdownBlinds.has(name)) &&
+          blindFilter.ante > 0 &&
+          blindFilter.ante < 8
+        ) {
+          errorStr += `- Blinds: Showdown bosses need max ante 8+ <br />`;
         }
 
         if (
           legendaries.length === 0 &&
           vouchers.length === 0 &&
           jokersPack.length === 0 &&
-          jokersShop.length === 0
+          jokersShop.length === 0 &&
+          arcanaFilter.names.length === 0 &&
+          spectralFilter.names.length === 0 &&
+          blindFilter.names.length === 0
         ) {
           errorStr += `- Add at least one search filter <br />`;
         }
@@ -2200,7 +2914,6 @@
 
         const jaml = buildJaml({
           jokersPack,
-          jokerPackNegative,
           jokerPackAnkh,
           legendaries,
           legendaryNegatives,
@@ -2209,6 +2922,13 @@
           voucherAnte,
           jokersShop,
           jokerShopAnte,
+          arcana: arcanaFilter.names,
+          arcanaAnte: arcanaFilter.ante,
+          spectral: spectralFilter.names,
+          spectralAnte: spectralFilter.ante,
+          blinds: blindFilter.names,
+          blindAnte: blindFilter.ante,
+          stake: searchStake,
         });
 
         runTaskWithWorkers(
@@ -2222,15 +2942,32 @@
               label,
               id: toMotelyId(label),
             })),
-            jokersPack: jokersPack.map((label) => ({
+            jokersPack: jokersPack.map((joker) => ({
+              label: joker.label,
+              id: toMotelyId(joker.label),
+              stickers: joker.stickers,
+              edition: joker.edition,
+            })),
+            jokersShop: jokersShop.map((joker) => ({
+              label: joker.label,
+              id: toMotelyId(joker.label),
+              stickers: joker.stickers,
+              edition: joker.edition,
+            })),
+            arcana: arcanaFilter.names.map((label) => ({
               label,
               id: toMotelyId(label),
             })),
-            jokersShop: jokersShop.map((label) => ({
+            spectral: spectralFilter.names.map((label) => ({
+              label,
+              id: toMotelyId(label),
+            })),
+            blinds: blindFilter.names.map((label) => ({
               label,
               id: toMotelyId(label),
             })),
             ankh: jokerPackAnkh,
+            stake: searchStake,
           },
           { onFound: addFoundHit, maxResults: 32 }
         )
