@@ -493,6 +493,8 @@
       .rarity-spectral.stage-art { border-color: rgba(90, 210, 220, 0.5); }
       .rarity-blind .card-art,
       .rarity-blind.stage-art { border-color: rgba(226, 90, 70, 0.55); }
+      .rarity-tag .card-art,
+      .rarity-tag.stage-art { border-color: rgba(232, 164, 90, 0.55); }
 
       .card-art.no-art,
       .stage-art.no-art,
@@ -611,6 +613,16 @@
         background: #1a1a22;
         color: #f2f2f8;
         box-shadow: inset 0 0 0 1px #c8c8e0;
+      }
+
+      .mod-chip[data-blind-slot="Small"].is-on {
+        background: #6cb4ff;
+        color: #0b1c2e;
+      }
+
+      .mod-chip[data-blind-slot="Big"].is-on {
+        background: #e8c478;
+        color: #2a1608;
       }
 
       .selected-rail.mod-rail {
@@ -1244,6 +1256,54 @@
           <p class="preview-label">Selected</p>
           <div id="blind-selected" class="card-rail selected-rail"></div>
         </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Small / Big blinds</h2>
+              <p class="hint">Skip tags on Small or Big Blind by this ante</p>
+            </div>
+            <div id="add-tag-toolbar" class="toolbar btn-toolbar">
+              <div class="input-group" style="min-width: 180px; flex: 1">
+                <input
+                  type="search"
+                  class="form-control"
+                  placeholder="Search tags..."
+                  oninput="findSelectable('tag', this.value)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addSelectable('tag');}"
+                />
+                <input
+                  type="text"
+                  id="add-tag-suggestion"
+                  class="form-control d-none"
+                  disabled
+                />
+                <button
+                  id="add-tag-button"
+                  class="btn btn-add d-none"
+                  type="button"
+                  onclick="addSelectable('tag')"
+                  disabled
+                >
+                  +
+                </button>
+              </div>
+              <div id="tag-ante-input-group" class="input-group" style="max-width: 140px">
+                <div class="input-group-text">Max ante</div>
+                <input
+                  type="number"
+                  id="tag-ante"
+                  class="form-control"
+                  value="0"
+                  oninput="validateInputUint(this)"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="tag-gallery" class="card-rail"></div>
+          <p class="preview-label">Selected · tap Small / Big</p>
+          <div id="tag-selected" class="card-rail selected-rail mod-rail"></div>
+        </section>
       </div>
 
       <div id="search" class="search-dock"></div>
@@ -1580,6 +1640,33 @@
         "Violet Vessel",
       ]);
 
+      const skipTags = [
+        "Uncommon Tag",
+        "Rare Tag",
+        "Negative Tag",
+        "Foil Tag",
+        "Holographic Tag",
+        "Polychrome Tag",
+        "Investment Tag",
+        "Voucher Tag",
+        "Boss Tag",
+        "Standard Tag",
+        "Charm Tag",
+        "Meteor Tag",
+        "Buffoon Tag",
+        "Handy Tag",
+        "Garbage Tag",
+        "Ethereal Tag",
+        "Coupon Tag",
+        "Double Tag",
+        "Juggle Tag",
+        "D6 Tag",
+        "Top-up Tag",
+        "Speed Tag",
+        "Orbital Tag",
+        "Economy Tag",
+      ];
+
       const pickerCfg = {
         arcana: {
           list: arcanaCards,
@@ -1620,11 +1707,26 @@
           kind: "blind",
           limit: 32,
         },
+        tag: {
+          list: skipTags,
+          gallery: "tag-gallery",
+          selected: "tag-selected",
+          toolbar: "add-tag-toolbar",
+          suggestionId: "add-tag-suggestion",
+          buttonId: "add-tag-button",
+          anteId: "tag-ante",
+          idPrefix: "tag-",
+          nameClass: "tag",
+          kind: "tag",
+          limit: 24,
+          blindSlots: true,
+        },
       };
 
       const arcanaSet = new Set(arcanaCards);
       const spectralSet = new Set(spectralCards);
       const blindSet = new Set(blinds);
+      const tagSet = new Set(skipTags);
 
       let cardAbilities = {};
       let abilityByFold = {};
@@ -1641,6 +1743,7 @@
         renderCardMatches("arcana", "", 32);
         renderCardMatches("spectral", "", 32);
         renderCardMatches("blind", "", 32);
+        renderCardMatches("tag", "", 24);
         bindCardPreview();
         setupSearchButton();
       })();
@@ -1718,6 +1821,7 @@
         if (voucherSet.has(name)) return "voucher";
         if (arcanaSet.has(name)) return "arcana";
         if (spectralSet.has(name)) return "spectral";
+        if (tagSet.has(name)) return "tag";
         if (blindSet.has(name)) return "blind";
         if (rareSet.has(name)) return "rare";
         if (uncommonSet.has(name)) return "uncommon";
@@ -1757,7 +1861,13 @@
               <button type="button" class="mod-chip" data-edition="Polychrome" title="Polychrome">Poly</button>
               <button type="button" class="mod-chip" data-edition="Negative" title="Negative">Neg</button>
             </div>`
+          : opts.blindSlots
+            ? `<div class="card-mods">
+              <button type="button" class="mod-chip is-on" data-blind-slot="Small" title="Small Blind">Small</button>
+              <button type="button" class="mod-chip is-on" data-blind-slot="Big" title="Big Blind">Big</button>
+            </div>`
           : "";
+        const blindSlotsAttr = opts.blindSlots ? ` data-blind-slots="Small,Big"` : "";
         const orderable = opts.orderable
           ? `<div class="card-order">
               <button type="button" class="order-btn" data-dir="-1" aria-label="Move earlier">‹</button>
@@ -1766,7 +1876,7 @@
             </div>`
           : "";
         return `
-          <div ${id ? `id="${id}"` : ""} class="game-card rarity-${rarity}${selected}" data-name="${escapeAttr(name)}" data-kind="${kind}" role="button" tabindex="0"${effect ? ` title="${escapeAttr(effect)}"` : ""}>
+          <div ${id ? `id="${id}"` : ""} class="game-card rarity-${rarity}${selected}" data-name="${escapeAttr(name)}" data-kind="${kind}"${blindSlotsAttr} role="button" tabindex="0"${effect ? ` title="${escapeAttr(effect)}"` : ""}>
             ${removable}
             <span class="card-art">
               ${cardArtImg(name, { lazy: true })}
@@ -1963,6 +2073,12 @@
             idPrefix: "blind-",
             featured: blinds,
           },
+          tag: {
+            list: skipTags,
+            gallery: "tag-gallery",
+            idPrefix: "tag-",
+            featured: skipTags,
+          },
         };
         const cfg = map[kind];
         const gallery = document.getElementById(cfg.gallery);
@@ -1997,6 +2113,7 @@
           arcana: "arcana-selected",
           spectral: "spectral-selected",
           blind: "blind-selected",
+          tag: "tag-selected",
         }[kind];
         if (!selectedId) return;
         const rail = document.getElementById(selectedId);
@@ -2089,6 +2206,7 @@
           );
         }
         if (item.slot) bits.push(`slot ${item.slot}`);
+        if (item.blind) bits.push(item.blind);
         if (item.edition) bits.push(item.edition);
         if (item.stickers && item.stickers.length) {
           bits.push(item.stickers.join(", "));
@@ -2149,6 +2267,8 @@
               resultItemHtml(item.label, locLine(`Ante ${item.ante}`))
             )
             .join("") || "—";
+        const tagHtml =
+          (locs.tags || []).map((item) => formatLoc(item)).join("") || "—";
         return `
           <div class="result-card">
             <div class="seed-block">
@@ -2197,6 +2317,10 @@
             <div class="result-row">
               <dt>Blinds</dt>
               <dd>${blindHtml}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Small / Big blinds</dt>
+              <dd>${tagHtml}</dd>
             </div>
           </div>
         `;
@@ -2343,6 +2467,7 @@
             kind: cfg.kind,
             selected: true,
             removable: true,
+            blindSlots: cfg.blindSlots,
           })
         );
         document.getElementById(cfg.suggestionId).placeholder = "";
@@ -2571,9 +2696,28 @@
         return (card.dataset.stickers || "").split(",").filter(Boolean);
       }
 
+      function tagSlotsOf(card) {
+        const raw = card.dataset.blindSlots;
+        if (!raw) return ["Small", "Big"];
+        return raw.split(",").filter(Boolean);
+      }
+
       function toggleCardMod(btn) {
         const card = btn.closest(".game-card");
         if (!card) return;
+        if (btn.dataset.blindSlot) {
+          const slot = btn.dataset.blindSlot;
+          let slots = tagSlotsOf(card);
+          if (slots.includes(slot)) {
+            if (slots.length === 1) return;
+            slots = slots.filter((s) => s !== slot);
+          } else {
+            slots.push(slot);
+          }
+          card.dataset.blindSlots = slots.join(",");
+          refreshCardModUi(card);
+          return;
+        }
         if (btn.dataset.edition) {
           const edition = btn.dataset.edition;
           card.dataset.edition =
@@ -2603,13 +2747,25 @@
       function refreshCardModUi(card) {
         const stickers = new Set(shopStickersOf(card));
         const edition = card.dataset.edition || "";
+        const slots = new Set(tagSlotsOf(card));
         card.querySelectorAll(".mod-chip").forEach((chip) => {
-          if (chip.dataset.edition) {
+          if (chip.dataset.blindSlot) {
+            chip.classList.toggle("is-on", slots.has(chip.dataset.blindSlot));
+          } else if (chip.dataset.edition) {
             chip.classList.toggle("is-on", chip.dataset.edition === edition);
           } else {
             chip.classList.toggle("is-on", stickers.has(chip.dataset.mod));
           }
         });
+      }
+
+      function collectSelectedTags() {
+        return [...document.querySelectorAll("#tag-selected .game-card")].map(
+          (card) => ({
+            label: card.dataset.name,
+            blinds: tagSlotsOf(card),
+          })
+        );
       }
 
       function collectSelectedJokers(railId) {
@@ -2692,6 +2848,7 @@
         const special = {
           "8 Ball": "EightBall",
           "Chaos the Clown": "ChaostheClown",
+          "Top-up Tag": "TopupTag",
         };
         if (special[name]) return special[name];
         return name
@@ -2798,6 +2955,18 @@
           lines.push(`    antes: [${yamlAntes(opts.blindAnte)}]`);
         });
 
+        (opts.tags || []).forEach((tag) => {
+          const name = typeof tag === "string" ? tag : tag.label;
+          const slots = (tag && tag.blinds) || ["Small", "Big"];
+          const wantSmall = slots.includes("Small");
+          const wantBig = slots.includes("Big");
+          let key = "tag";
+          if (wantSmall && !wantBig) key = "smallBlindTag";
+          if (wantBig && !wantSmall) key = "bigBlindTag";
+          lines.push(`  - ${key}: ${toMotelyId(name)}`);
+          lines.push(`    antes: [${yamlAntes(opts.tagAnte)}]`);
+        });
+
         return lines.join("\n");
       }
 
@@ -2874,6 +3043,14 @@
         const arcanaFilter = readSelectableFilter("arcana", "Arcana", 1);
         const spectralFilter = readSelectableFilter("spectral", "Spectral", 1);
         const blindFilter = readSelectableFilter("blind", "Blinds", 1);
+        const tags = collectSelectedTags();
+        let tagAnte = 0;
+        if (tags.length > 0) {
+          tagAnte = Number(document.getElementById("tag-ante").value);
+          if (tagAnte < 1) {
+            errorStr += `- Small / Big blinds: max ante should be minimum 1<br />`;
+          }
+        }
         errorStr += arcanaFilter.error;
         errorStr += spectralFilter.error;
         errorStr += blindFilter.error;
@@ -2892,7 +3069,8 @@
           jokersShop.length === 0 &&
           arcanaFilter.names.length === 0 &&
           spectralFilter.names.length === 0 &&
-          blindFilter.names.length === 0
+          blindFilter.names.length === 0 &&
+          tags.length === 0
         ) {
           errorStr += `- Add at least one search filter <br />`;
         }
@@ -2928,6 +3106,8 @@
           spectralAnte: spectralFilter.ante,
           blinds: blindFilter.names,
           blindAnte: blindFilter.ante,
+          tags,
+          tagAnte,
           stake: searchStake,
         });
 
@@ -2965,6 +3145,11 @@
             blinds: blindFilter.names.map((label) => ({
               label,
               id: toMotelyId(label),
+            })),
+            tags: tags.map((tag) => ({
+              label: tag.label,
+              id: toMotelyId(tag.label),
+              blinds: tag.blinds,
             })),
             ankh: jokerPackAnkh,
             stake: searchStake,
