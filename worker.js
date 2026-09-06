@@ -88,6 +88,7 @@ async function runSearch(jaml, startBatch, stride, targets) {
         if (!namedTargetsOk(locations, "arcana", targets)) continue;
         if (!namedTargetsOk(locations, "spectral", targets)) continue;
         if (!namedTargetsOk(locations, "blinds", targets)) continue;
+        if (!namedTargetsOk(locations, "tags", targets)) continue;
         posted.add(seed);
         port.postMessage({
           type: "found",
@@ -260,6 +261,7 @@ should:
   const arcana = [];
   const spectral = [];
   const blinds = [];
+  const tags = [];
 
   const souls = [];
   for (const ante of analysis.antes) {
@@ -386,5 +388,31 @@ should:
     }
   });
 
-  return { legendaries, vouchers, jokersPack, jokersShop, ankh, arcana, spectral, blinds };
+  (targets.tags || []).forEach((want) => {
+    const slots = want.blinds || [];
+    const wantSmall = slots.length === 0 || slots.includes("Small");
+    const wantBig = slots.length === 0 || slots.includes("Big");
+    for (const ante of analysis.antes) {
+      const smallName = engine.MotelyTag[ante.smallBlindTag];
+      const bigName = engine.MotelyTag[ante.bigBlindTag];
+      if (wantSmall && smallName === want.id) {
+        tags.push({
+          label: want.label,
+          ante: displayAnte(ante),
+          blind: "Small Blind",
+        });
+        break;
+      }
+      if (wantBig && bigName === want.id) {
+        tags.push({
+          label: want.label,
+          ante: displayAnte(ante),
+          blind: "Big Blind",
+        });
+        break;
+      }
+    }
+  });
+
+  return { legendaries, vouchers, jokersPack, jokersShop, ankh, arcana, spectral, blinds, tags };
 }
