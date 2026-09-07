@@ -615,8 +615,8 @@
       .selected-rail {
         display: flex;
         flex-wrap: wrap;
-        max-height: 92px;
-        overflow-y: auto;
+        max-height: none;
+        overflow: visible;
         margin-top: 2px;
       }
 
@@ -630,10 +630,6 @@
 
       .selected-rail.ordered-rail .game-card {
         width: 78px;
-      }
-
-      .selected-rail.ordered-rail {
-        max-height: 210px;
       }
 
       .card-mods {
@@ -704,10 +700,6 @@
       .mod-chip[data-blind-slot="Big"].is-on {
         background: #e8c478;
         color: #2a1608;
-      }
-
-      .selected-rail.mod-rail {
-        max-height: 210px;
       }
 
       .selected-rail.mod-rail .game-card {
