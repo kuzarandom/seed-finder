@@ -1160,7 +1160,7 @@
             <button type="button" class="panel-toggle" aria-expanded="false">
               <span class="panel-toggle-copy">
               <h2>Jokers in shop</h2>
-              <p class="hint">Left → right is the order you want to find them</p>
+              <p class="hint">Left → right order · limit shop slots to narrow the hit</p>
               </span>
               <span class="panel-meta">
                 <span class="panel-count" data-filter-count></span>
@@ -1200,6 +1200,18 @@
                   class="form-control"
                   value="0"
                   oninput="validateInputUint(this)"
+                />
+              </div>
+              <div id="joker-shop-slots-input-group" class="input-group" style="max-width: 120px">
+                <div class="input-group-text">Slots</div>
+                <input
+                  type="number"
+                  id="joker-shop-slots"
+                  class="form-control"
+                  value="2"
+                  min="1"
+                  max="8"
+                  oninput="validateShopSlots(this)"
                 />
               </div>
             </div>
@@ -3027,6 +3039,19 @@
         if (!res) e.value = "0";
       }
 
+      function validateShopSlots(e) {
+        validateInputUint(e);
+        let n = Number(e.value);
+        if (!Number.isFinite(n) || n < 1) n = 1;
+        if (n > 8) n = 8;
+        e.value = String(n);
+      }
+
+      function yamlShopSlots(count) {
+        const n = Math.max(1, Math.min(8, Number(count) || 2));
+        return Array.from({ length: n }, (_, i) => i).join(", ");
+      }
+
       function formatAsId(str) {
         return str.toLowerCase().replaceAll(" ", "-").replaceAll("'", "");
       }
@@ -3117,7 +3142,9 @@
           lines.push(`  - joker: ${toMotelyId(name)}`);
           lines.push(`    antes: [${yamlAntes(opts.jokerShopAnte)}]`);
           lines.push("    sources:");
-          lines.push("      shopItems: [0, 1, 2, 3, 4, 5, 6, 7]");
+          lines.push(
+            `      shopItems: [${yamlShopSlots(opts.jokerShopSlots)}]`
+          );
           const stickers = (joker && joker.stickers) || [];
           if (stickers.length) {
             lines.push(`    stickers: [${stickers.join(", ")}]`);
@@ -3214,6 +3241,7 @@
 
         const jokersShop = collectShopJokers();
         let jokerShopAnte;
+        let jokerShopSlots = 2;
         if (jokersShop.length == 0) {
           jokerShopAnte = 0;
         } else {
@@ -3222,6 +3250,12 @@
           );
           if (jokerShopAnte == 0) {
             errorStr += `- Jokers in shop: max ante should be minimum 1st <br />`;
+          }
+          jokerShopSlots = Number(
+            document.getElementById("joker-shop-slots").value
+          );
+          if (jokerShopSlots < 1 || jokerShopSlots > 8) {
+            errorStr += `- Jokers in shop: slots should be 1–8 <br />`;
           }
         }
 
@@ -3287,6 +3321,7 @@
           voucherAnte,
           jokersShop,
           jokerShopAnte,
+          jokerShopSlots,
           arcana: arcanaFilter.names,
           arcanaAnte: arcanaFilter.ante,
           spectral: spectralFilter.names,
@@ -3321,6 +3356,7 @@
               stickers: joker.stickers,
               edition: joker.edition,
             })),
+            jokerShopSlots,
             arcana: arcanaFilter.names.map((label) => ({
               label,
               id: toMotelyId(label),

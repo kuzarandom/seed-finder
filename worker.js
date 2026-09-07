@@ -331,8 +331,13 @@ should:
   });
 
   (targets.jokersShop || []).forEach((want) => {
+    const maxSlots = Math.max(
+      1,
+      Math.min(8, Number(targets.jokerShopSlots) || 8)
+    );
     outerShop: for (const ante of analysis.antes) {
-      for (let slot = 0; slot < ante.shopItems.length; slot++) {
+      const limit = Math.min(ante.shopItems.length, maxSlots);
+      for (let slot = 0; slot < limit; slot++) {
         const it = ante.shopItems[slot];
         if (itemName(it) !== want.id) continue;
         if (!shopModsOk(it, want)) continue;
