@@ -210,6 +210,23 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
       }
 
+      .panel.is-collapsed {
+        padding-bottom: 10px;
+      }
+
+      .panel.is-collapsed > *:not(.panel-head) {
+        display: none !important;
+      }
+
+      .panel.is-collapsed .panel-head {
+        margin-bottom: 0;
+        align-items: center;
+      }
+
+      .panel.is-collapsed .panel-head .toolbar {
+        display: none;
+      }
+
       .panel h2 {
         margin: 0 0 2px;
         font-family: Fraunces, Georgia, serif;
@@ -217,9 +234,13 @@
       }
 
       .panel .hint {
-        margin: 0 0 8px;
+        margin: 0;
         color: var(--muted);
         font-size: 0.75rem;
+      }
+
+      .panel:not(.is-collapsed) .hint {
+        margin-bottom: 8px;
       }
 
       .panel-head {
@@ -229,6 +250,66 @@
         align-items: flex-end;
         justify-content: space-between;
         margin-bottom: 8px;
+      }
+
+      .panel-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .panel-toggle:hover h2 {
+        color: var(--gold);
+      }
+
+      .panel-toggle-copy {
+        min-width: 0;
+      }
+
+      .panel-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .panel-count {
+        color: var(--gold);
+        font-size: 0.72rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .panel-count:empty {
+        display: none;
+      }
+
+      .panel-chevron {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        color: var(--gold-2);
+        font-size: 0.85rem;
+        line-height: 20px;
+        text-align: center;
+        transition: transform 0.18s ease;
+      }
+
+      .panel.has-selection {
+        border-color: rgba(232, 196, 120, 0.35);
+      }
+
+      .panel.has-selection.is-collapsed .panel-count {
+        color: var(--gold);
       }
 
       .panel-head .toolbar,
@@ -932,12 +1013,18 @@
       </div>
 
       <div class="filters">
-        <section class="panel">
+        <section class="panel" data-filter="legendary">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="true">
+              <span class="panel-toggle-copy">
               <h2>Legendaries</h2>
               <p class="hint">Tap a card to include it</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-legendary-toolbar" class="toolbar btn-toolbar">
               <ul id="add-legendary-menu" class="dropdown-menu d-none"></ul>
               <div
@@ -969,12 +1056,18 @@
           <div id="legendary-gallery" class="card-rail legendary-rail"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel is-collapsed" data-filter="voucher">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="false">
+              <span class="panel-toggle-copy">
               <h2>Vouchers</h2>
               <p class="hint">Must appear by this ante</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-voucher-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
                 <input
@@ -1017,12 +1110,18 @@
           <div id="voucher-selected" class="card-rail selected-rail"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel is-collapsed" data-filter="joker-pack">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="false">
+              <span class="panel-toggle-copy">
               <h2>First buffoon pack</h2>
               <p class="hint">Up to 2 jokers in the opening pack</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-joker-pack-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
                 <input
@@ -1064,12 +1163,18 @@
           <p id="joker-pack-stake-hint" class="hint" hidden></p>
         </section>
 
-        <section class="panel">
+        <section class="panel is-collapsed" data-filter="joker-shop">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="false">
+              <span class="panel-toggle-copy">
               <h2>Jokers in shop</h2>
               <p class="hint">Left → right is the order you want to find them</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-joker-shop-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
                 <input
@@ -1113,12 +1218,18 @@
           <p id="joker-shop-stake-hint" class="hint" hidden></p>
         </section>
 
-        <section class="panel">
+        <section class="panel is-collapsed" data-filter="arcana">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="false">
+              <span class="panel-toggle-copy">
               <h2>Arcana</h2>
               <p class="hint">Tarot cards to find by this ante</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-arcana-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
                 <input
@@ -1161,12 +1272,18 @@
           <div id="arcana-selected" class="card-rail selected-rail"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel is-collapsed" data-filter="spectral">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="false">
+              <span class="panel-toggle-copy">
               <h2>Spectral</h2>
               <p class="hint">Spectral cards to find by this ante</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-spectral-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
                 <input
@@ -1209,12 +1326,18 @@
           <div id="spectral-selected" class="card-rail selected-rail"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel is-collapsed" data-filter="blind">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="false">
+              <span class="panel-toggle-copy">
               <h2>Blinds</h2>
               <p class="hint">Boss blinds to find by this ante</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-blind-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
                 <input
@@ -1257,12 +1380,18 @@
           <div id="blind-selected" class="card-rail selected-rail"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel is-collapsed" data-filter="tag">
           <div class="panel-head">
-            <div>
+            <button type="button" class="panel-toggle" aria-expanded="false">
+              <span class="panel-toggle-copy">
               <h2>Small / Big blinds</h2>
               <p class="hint">Skip tags on Small or Big Blind by this ante</p>
-            </div>
+              </span>
+              <span class="panel-meta">
+                <span class="panel-count" data-filter-count></span>
+                <span class="panel-chevron" aria-hidden="true">›</span>
+              </span>
+            </button>
             <div id="add-tag-toolbar" class="toolbar btn-toolbar">
               <div class="input-group" style="min-width: 180px; flex: 1">
                 <input
@@ -1737,16 +1866,77 @@
           setAbilities(data);
         } catch (err) {}
         renderLegendaryGallery();
-        renderCardMatches("voucher", "", 32);
-        renderCardMatches("joker-pack", "", 16);
-        renderCardMatches("joker-shop", "", 16);
-        renderCardMatches("arcana", "", 32);
-        renderCardMatches("spectral", "", 32);
-        renderCardMatches("blind", "", 32);
-        renderCardMatches("tag", "", 24);
         bindCardPreview();
+        setupFilterPanels();
         setupSearchButton();
+        refreshFilterPanelCounts();
       })();
+
+      function setupFilterPanels() {
+        document.querySelectorAll(".panel[data-filter]").forEach((panel) => {
+          const toggle = panel.querySelector(".panel-toggle");
+          if (!toggle || toggle.dataset.bound) return;
+          toggle.dataset.bound = "1";
+          toggle.addEventListener("click", () => {
+            const open = panel.classList.contains("is-collapsed");
+            panel.classList.toggle("is-collapsed", !open);
+            toggle.setAttribute("aria-expanded", open ? "true" : "false");
+            if (open) ensureFilterGallery(panel.dataset.filter);
+          });
+        });
+        ensureFilterGallery("legendary");
+      }
+
+      function ensureFilterGallery(filterId) {
+        const panel = document.querySelector(`.panel[data-filter="${filterId}"]`);
+        if (!panel || panel.dataset.galleryReady === "1") return;
+        panel.dataset.galleryReady = "1";
+        if (filterId === "legendary") {
+          renderLegendaryGallery();
+          return;
+        }
+        const limits = {
+          voucher: 32,
+          "joker-pack": 16,
+          "joker-shop": 16,
+          arcana: 32,
+          spectral: 32,
+          blind: 32,
+          tag: 24,
+        };
+        if (limits[filterId]) renderCardMatches(filterId, "", limits[filterId]);
+      }
+
+      function filterPanelCount(filterId) {
+        if (filterId === "legendary") {
+          return document.querySelectorAll(
+            "#legendary-gallery .game-card.is-selected"
+          ).length;
+        }
+        const selectedId = {
+          voucher: "voucher-selected",
+          "joker-pack": "joker-pack-selected",
+          "joker-shop": "joker-shop-selected",
+          arcana: "arcana-selected",
+          spectral: "spectral-selected",
+          blind: "blind-selected",
+          tag: "tag-selected",
+        }[filterId];
+        if (!selectedId) return 0;
+        return document.querySelectorAll(
+          `#${selectedId} .game-card`
+        ).length;
+      }
+
+      function refreshFilterPanelCounts() {
+        document.querySelectorAll(".panel[data-filter]").forEach((panel) => {
+          const count = filterPanelCount(panel.dataset.filter);
+          const el = panel.querySelector("[data-filter-count]");
+          if (!el) return;
+          el.textContent = count > 0 ? `${count} selected` : "";
+          panel.classList.toggle("has-selection", count > 0);
+        });
+      }
 
       function foldName(name) {
         return String(name)
@@ -1777,6 +1967,9 @@
 
       function artFileName(name) {
         const mapped = artFileAliases[name] || name;
+        if (tagSet.has(name)) {
+          return mapped.replace(/ Tag$/i, " tag").replaceAll(" ", "_") + ".png";
+        }
         const slug = mapped.replaceAll(" ", "_");
         if (arcanaSet.has(name)) return `Tarot_${slug}.png`;
         if (spectralSet.has(name)) return `Spectral_${slug}.png`;
@@ -2017,6 +2210,7 @@
           if (Number(ante.value) === 0) ante.value = 8;
         }
         fillStage("legendary", joker);
+        refreshFilterPanelCounts();
       }
 
       function filterNames(list, query, limit, featured) {
@@ -2121,6 +2315,7 @@
         if (label && label.classList.contains("preview-label")) {
           label.hidden = rail.children.length === 0;
         }
+        refreshFilterPanelCounts();
       }
 
       function setupSearchButton() {
